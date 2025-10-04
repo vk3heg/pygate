@@ -1,0 +1,33 @@
+
+Here's some help about how you can use AreaFix to change your newsgroup areas.
+
+Example:
+
+ Msg  : 5 of 8                         Pvt
+ From : Your Name                      2:5020/960.1  13 Feb 2029  19:51:12
+ To   : AreaFix                        3:633/10      15 Feb 2029  21:57:42
+ Subj : PASSWORD         <- Your password
+------------------------------------------------------------------------------
+
+Available commands: (one per line)
+HELP                     <- AreaFix will send you this help.
+LIST                     <- List the areas you are currently subscribed to
+QUERY [pattern]          <- Search available areas (with optional pattern)
++<area>                  <- Subscribe to the area
+-<area>                  <- Unsubscribe from the area
+
+Examples:
+  +alt.books.mysteries     - Subscribe to alt.books.mysteries area
+  -comp.os.linux.misc      - Unsubscribe from comp.os.linux.misc area
+  LIST                     - Show subscribed areas only
+  QUERY linux              - Search for areas containing 'linux'
+  QUERY                    - Show subscribed areas (same as LIST)
+
+Notes:
+- Password must be in the SUBJECT line
+- Area names are case-insensitive for search
+- Commands are processed until '---' or end of message
+- LIST shows only subscribed areas to avoid large responses
+- Use QUERY <pattern> to search the full newsgroup list
+
+For questions, contact the sysop.
