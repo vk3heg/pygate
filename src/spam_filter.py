@@ -42,6 +42,8 @@ class SpamFilterModule:
         self.add_filter(self.path_filter, "Path Filter", priority=14)
         self.add_filter(self.newsgroups_filter, "Newsgroups Filter", priority=12)
         self.add_filter(self.content_type_filter, "Content-Type Filter", priority=10)
+        self.add_filter(self.message_id_filter, "Message-ID Filter", priority=9)
+        self.add_filter(self.organization_filter, "Organization Filter", priority=9)
         self.add_filter(self.crosspost_filter, "Cross-Post Filter", priority=8)
 
         self.logger.info(f"Loaded {len(self.filters)} built-in spam filters")
@@ -60,7 +62,9 @@ class SpamFilterModule:
             'User-Agent': [],
             'Path': [],
             'Newsgroups': [],
-            'Content-Type': []
+            'Content-Type': [],
+            'Message-ID': [],
+            'Organization': []
         }
 
         filter_file = self.config.get('SpamFilter', 'filter_file')
@@ -186,6 +190,20 @@ class SpamFilterModule:
         headers = message.get('headers', {})
         content_type = headers.get('content-type', '')
         return self._check_pattern_match('Content-Type', content_type)
+
+    def message_id_filter(self, message: Dict[str, Any]) -> bool:
+        """Filter based on Message-ID header patterns"""
+        # Get Message-ID from headers dict if available
+        headers = message.get('headers', {})
+        message_id = headers.get('message-id', '')
+        return self._check_pattern_match('Message-ID', message_id)
+
+    def organization_filter(self, message: Dict[str, Any]) -> bool:
+        """Filter based on Organization header patterns"""
+        # Get Organization from headers dict if available
+        headers = message.get('headers', {})
+        organization = headers.get('organization', '')
+        return self._check_pattern_match('Organization', organization)
 
     def crosspost_filter(self, message: Dict[str, Any]) -> bool:
         """Filter messages with excessive cross-posting"""

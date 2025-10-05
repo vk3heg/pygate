@@ -481,7 +481,10 @@ class NNTPModule:
                         text_parts.append(str(payload))
 
             if text_parts:
-                return '\n'.join(text_parts).strip()
+                # Join text parts and only strip trailing whitespace (preserve blank lines within body)
+                result = '\n'.join(text_parts)
+                # Only remove excessive trailing newlines, but preserve internal blank lines
+                return result.rstrip('\n') + '\n' if result.rstrip() else result.rstrip()
 
             # Fallback to original body if no text parts found
             return self.decode_text_content(body_text, content_transfer_encoding)
