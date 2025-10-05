@@ -1,10 +1,12 @@
 # PyGate - Python FidoNet-NNTP Gateway
 
-PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP newsgroups, allowing seamless message exchange
-between the two networks. PyGate is designed to run on the NNTP news server, but can be run on a different computer.
+PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP newsgroups, allowing seamless message
+exchange between the two networks. PyGate is designed to run on the NNTP news server, but can be run on a different
+computer.
 
 **Version:** 1.0
 **Author:** Stephen Walsh
+**Contact:** vk3heg@gmail.com | FidoNet 3:633/280 | FSXNet 21:1/195 | Amiganet 39:901/280
 **Based on:** SoupGate by Tom Torfs
 
 ## Table of Contents
@@ -16,6 +18,7 @@ between the two networks. PyGate is designed to run on the NNTP news server, but
 - [Usage](#usage)
 - [Message Hold System](#message-hold-system)
 - [Spam Filtering](#spam-filtering)
+- [Areafix Wildcard Protection](#areafix-wildcard-protection)
 - [Troubleshooting](#troubleshooting)
 - [File Structure](#file-structure)
 - [Examples](#examples)
@@ -29,7 +32,7 @@ between the two networks. PyGate is designed to run on the NNTP news server, but
 - **Message Hold System**: Manual review and approval of messages
 - **Spam Filtering**: Advanced regex-based filtering with built-in patterns
 - **Netmail Notifications**: Automatic notifications for held messages
-- **Areafix Support**: Dynamic area management via netmail
+- **Areafix Support**: Dynamic area management via netmail with wildcard protection
 - **Character Set Handling**: Proper encoding conversion per FTS standards
 
 ### Advanced Features
@@ -37,8 +40,8 @@ between the two networks. PyGate is designed to run on the NNTP news server, but
 - **Cross-posting Control**: Configurable limits on cross-posted messages
 - **Timezone Support**: Proper timezone handling (TZUTC)
 - **Message Threading**: Preserves reply chains and references
-- **Administrative Panel**: Admin panel interface for message review of held messages, filter management, newsrc management,
-   newsgroups list viewing.
+- **Administrative Panel**: Admin panel interface for message review of held messages, filter management, newsrc
+  management, newsgroups list viewing.
 
 ## Requirements
 
@@ -70,7 +73,16 @@ between the two networks. PyGate is designed to run on the NNTP news server, but
    chmod +x bin/*
    ```
 
-3. **Directory structure is already organized**:
+3. **Copy the FidoNet mailer**:
+   ```bash
+   # For Linux: Copy binkd binary to bin/ directory
+   cp /usr/local/bin/binkd bin/
+
+   # For Windows: Copy binkd.exe to bin\ directory
+   copy C:\binkd\binkd.exe bin\
+   ```
+
+4. **Directory structure is already organized**:
    ```bash
    # Directories are pre-organized:
    # config/     - Configuration files
@@ -80,13 +92,13 @@ between the two networks. PyGate is designed to run on the NNTP news server, but
    # cache/      - Cache files
    ```
 
-4. **Configure your system** (see Configuration section)
+5. **Configure your system** (see Configuration section)
 
 ## Configuration
 
-### Main Configuration File: `config/pygate.cfg`
+### Main Configuration File: `pygate.cfg`
 
-The main configuration file controls all aspects of PyGate operation:
+Located in the PyGate root directory, the main configuration file controls all aspects of PyGate operation:
 
 ```ini
 [Gateway]
@@ -265,25 +277,33 @@ PyGate supports several operation modes:
 
 ### Automated Operation
 
-PyGate includes an enhanced automation script (`bin/gate.sh`) that provides robust error handling, logging, and maintenance
-features.
+PyGate includes enhanced automation scripts (`bin/gate.sh` for Linux, `bin/gate.bat` for Windows) that provide robust error handling, logging, and maintenance features.
 
-#### Using gate.sh (Recommended)
+#### Using gate.sh / gate.bat (Recommended)
 
-The `gate.sh` script provides a complete automated workflow:
+The automation scripts provide a complete automated workflow:
 
 ```bash
-# Run the automation script manually
+# Linux: Run the automation script manually
 ./bin/gate.sh
 
-# Enable debug mode for troubleshooting
+# Windows: Run the automation script manually
+bin\gate.bat
+
+# Linux: Enable debug mode for troubleshooting
 ./bin/gate.sh --debug
 
-# View help
+# Windows: Enable debug mode for troubleshooting
+bin\gate.bat --debug
+
+# Linux: View help
 ./bin/gate.sh --help
+
+# Windows: View help
+bin\gate.bat --help
 ```
 
-**Features of gate.sh:**
+**Features of gate.sh / gate.bat:**
 - **Lock file management**: Prevents overlapping executions
 - **Timeout handling**: Prevents runaway processes
 - **Pre-flight checks**: Validates configuration and directories
@@ -294,8 +314,9 @@ The `gate.sh` script provides a complete automated workflow:
 - **Maintenance scheduling**: Runs maintenance tasks at 2 AM
 - **Error recovery**: Continues operation even if individual steps fail
 
-**Set up cron for automated operation (recommended):**
+**Set up automated operation (recommended):**
 
+Linux (cron):
 ```bash
 # Every 30 minutes - full PyGate cycle with gate.sh
 */30 * * * * /opt/pygate/bin/gate.sh
@@ -304,7 +325,12 @@ The `gate.sh` script provides a complete automated workflow:
 */15 * * * * /opt/pygate/bin/gate.sh
 ```
 
-The gate.sh script logs to `data/logs/gate.log` and maintains statistics in `data/logs/gate_stats.log`.
+Windows (Task Scheduler):
+- Create a new task that runs `C:\pygate\bin\gate.bat`
+- Set to repeat every 30 minutes (or 15 minutes for higher frequency)
+- Run whether user is logged on or not
+
+The automation scripts log to `data/logs/gate.log` and maintain statistics in `data/logs/gate_stats.log`.
 
 #### Manual Cron Setup (Alternative)
 
@@ -620,6 +646,121 @@ tail -f logs/pygate.log | grep -i filter
 - Failed messages are logged with filter details
 - Statistics tracked: filtered vs. passed messages in logfile
 
+## Areafix Wildcard Protection
+
+PyGate includes built-in protection against wildcard subscription attempts that could subscribe users to thousands
+of newsgroups.
+
+### What It Protects Against
+
+With 30,000+ newsgroups available, a wildcard `*` subscription would:
+- Subscribe the user to ALL newsgroups
+- Overwhelm their system with massive traffic
+- Consume excessive bandwidth and disk space
+- Create processing delays for everyone
+
+### How It Works
+
+The areafix module automatically blocks:
+1. **Wildcard subscriptions**: `*` or `+*` in areafix requests
+2. **Excessive subscriptions**: More than 100 areas in a single request (configurable)
+
+When blocked, the user receives a helpful rejection message explaining what happened and how to correctly subscribe.
+
+### Configuration
+
+Add to `config/pygate.cfg`:
+
+```ini
+[Areafix]
+# Maximum areas allowed in a single areafix request
+# Default: 100 if not specified
+max_areas_per_request = 100
+
+# Existing areafix settings
+areafix_password = yourpassword
+```
+
+### Example: Blocked Request
+
+**User sends:**
+```
+TO: AREAFIX
+SUBJECT: password
+
+*
+```
+
+**User receives:**
+```
+REQUEST BLOCKED
+
+Wildcard subscription '*' is not permitted. Use QUERY to search for specific areas.
+
+WHAT TO DO INSTEAD:
+  1. Use 'QUERY <pattern>' to search for areas
+     Example: QUERY comp.*
+     Example: QUERY aus.*
+
+  2. Subscribe to specific areas
+     Example: +comp.lang.python
+     Example: +aus.cars
+
+  3. Send 'HELP' for more information
+
+Your request was automatically blocked for security reasons.
+```
+
+### Example: Allowed Request
+
+**User sends:**
+```
+TO: AREAFIX
+SUBJECT: password
+
++comp.lang.python
++aus.cars
+QUERY comp.*
+```
+
+**Result:** All commands processed normally.
+
+### Logging
+
+Blocked requests are logged for admin review:
+
+```
+2025-10-05 14:32:15 - PyGate - WARNING - BLOCKED areafix from Nick Andre: Wildcard subscription '*' is not permitted.
+```
+
+### Customization
+
+#### Change Maximum Areas Limit
+
+In `config/pygate.cfg`:
+```ini
+[Areafix]
+max_areas_per_request = 50   # More restrictive
+# or
+max_areas_per_request = 200  # More permissive
+```
+
+#### Disable Protection (Not Recommended)
+
+Edit `src/areafix_module.py` line 24:
+```python
+self.blocked_patterns = []  # Disable wildcard blocking
+self.max_areas_per_request = 999999  # Effectively unlimited
+```
+
+### Benefits
+
+- **Automatic Protection**: No manual configuration required, works out of the box
+- **User Education**: Rejection messages explain why blocked and provide alternatives
+- **System Protection**: Prevents accidental or malicious mass subscriptions
+- **Configurable**: Adjust limits to your needs
+- **Full Logging**: All blocks recorded for admin review
+
 ## Troubleshooting
 
 ### Common Issues
@@ -762,8 +903,10 @@ pygate/
 │   ├── newsgroups         # Newsgroups list
 │   └── areafix.hlp        # Areafix help file
 ├── bin/                   # Binaries and scripts
-│   ├── binkd              # Binkd mailer binary
-│   └── gate.sh            # Automated PyGate execution script
+│   ├── binkd              # Binkd mailer binary (Linux)
+│   ├── binkd.exe          # Binkd mailer binary (Windows)
+│   ├── gate.sh            # Automated PyGate execution script (Linux)
+│   └── gate.bat           # Automated PyGate execution script (Windows)
 ├── data/                  # Runtime data
 │   ├── logs/              # Log files
 │   │   ├── pygate.log     # PyGate operation logs
@@ -781,6 +924,7 @@ pygate/
 │       ├── pending/       # Messages awaiting review
 │       ├── approved/      # Approved messages
 │       ├── rejected/      # Rejected messages
+│       ├── backup/        # Backup of held messages after releasing
 │       └── notifications.json # Notification tracking
 ├── cache/                 # Cache files
 │   └── __pycache__/       # Python bytecode cache
@@ -807,11 +951,16 @@ echo "alt.bbs.mystic: 0-0" >> config/newsrc
 ./pygate.py --export
 
 # OR use the automation script (recommended)
-./bin/gate.sh
+./bin/gate.sh          # Linux
+bin\gate.bat           # Windows
 
-# 5. Set up cron for automated operation
+# 5. Set up automated operation
+# Linux (cron):
 crontab -e
 # Add: */30 * * * * /opt/pygate/bin/gate.sh
+
+# Windows (Task Scheduler):
+# Create task to run C:\pygate\bin\gate.bat every 30 minutes
 ```
 
 ### Example 2: Adding New Areas
@@ -935,13 +1084,14 @@ python3 admin_panel.py
 ./pygate.py --process-held
 ```
 
-### Example 6: Monitoring with gate.sh
+### Example 6: Monitoring with Automation Scripts
 
 ```bash
-# 1. Run gate.sh manually with debug mode
-./bin/gate.sh --debug
+# 1. Run automation script manually with debug mode
+./bin/gate.sh --debug    # Linux
+bin\gate.bat --debug     # Windows
 
-# 2. Monitor gate.sh logs in real-time
+# 2. Monitor automation logs in real-time
 tail -f data/logs/gate.log
 
 # 3. Check statistics

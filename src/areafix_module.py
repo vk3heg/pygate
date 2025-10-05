@@ -20,6 +20,10 @@ class AreafixModule:
         self.config = config
         self.logger = logger
 
+        # Wildcard protection settings
+        self.blocked_patterns = ['*', '+*']  # Patterns that are blocked
+        self.max_areas_per_request = config.getint('Areafix', 'max_areas_per_request', fallback=100)
+
     def is_areafix_message(self, message: Dict[str, Any]) -> bool:
         """Check if message is an areafix request"""
         to_name = message.get('to_name', '').upper()
@@ -45,6 +49,26 @@ class AreafixModule:
 
         return False
 
+    def check_wildcard_protection(self, commands: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        Check if commands contain blocked wildcards or excessive requests
+        Returns error message if blocked, None if allowed
+        """
+        # Check for wildcard patterns
+        for command in commands:
+            if command.get('action') == 'subscribe':
+                area = command.get('area', '').strip()
+                # Check if area matches blocked patterns
+                if area in self.blocked_patterns:
+                    return f"Wildcard subscription '{area}' is not permitted. Use QUERY to search for specific areas."
+
+        # Check for excessive subscriptions
+        subscribe_count = sum(1 for cmd in commands if cmd.get('action') == 'subscribe')
+        if subscribe_count > self.max_areas_per_request:
+            return f"Too many subscription requests ({subscribe_count} areas). Maximum allowed is {self.max_areas_per_request}. Please subscribe in smaller batches."
+
+        return None  # All checks passed
+
     def process_areafix_message(self, message: Dict[str, Any]) -> bool:
         """Process areafix request and generate response"""
         try:
@@ -53,7 +77,32 @@ class AreafixModule:
             # Parse areafix commands
             commands = self.parse_areafix_commands(message)
 
-            # Process each command
+            # Check wildcard protection BEFORE processing commands
+            block_reason = self.check_wildcard_protection(commands)
+            if block_reason:
+                self.logger.warning(f"BLOCKED areafix from {message.get('from_name', 'Unknown')}: {block_reason}")
+
+                # Create rejection response
+                rejection_result = {
+                    'success': False,
+                    'message': f"REQUEST BLOCKED\n\n{block_reason}\n\n" +
+                              "WHAT TO DO INSTEAD:\n" +
+                              "  1. Use 'QUERY <pattern>' to search for areas\n" +
+                              "     Example: QUERY comp.*\n" +
+                              "     Example: QUERY aus.*\n\n" +
+                              "  2. Subscribe to specific areas\n" +
+                              "     Example: +comp.lang.python\n" +
+                              "     Example: +aus.cars\n\n" +
+                              "  3. Send 'HELP' for more information\n\n" +
+                              "Your request was automatically blocked for security reasons.",
+                    'command': {'action': 'blocked', 'original': 'wildcard protection'}
+                }
+
+                # Generate and send rejection response
+                response = self.generate_areafix_response(message, [rejection_result])
+                return self.send_areafix_response(message, response)
+
+            # Process each command (only if not blocked)
             results = []
             for command in commands:
                 result = self.execute_areafix_command(command)
