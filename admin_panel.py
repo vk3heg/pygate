@@ -517,39 +517,72 @@ class AdminPanel:
         self.pause()
 
     def run_config_check(self):
-        """Run configuration check using pygate --check"""
+        """Run configuration check using ConfigValidator"""
         self.clear_screen()
         print("=== Configuration Check ===")
         print()
 
-        if not os.path.exists('pygate.py'):
-            self.show_error("pygate.py not found")
+        if not self.config:
+            self.show_error("Configuration not loaded")
             return
 
         print("Running configuration check...")
         print()
 
         try:
-            result = subprocess.run([sys.executable, 'pygate.py', '--check'],
-                                  capture_output=True, text=True, timeout=30)
+            from src.config_validator import ConfigValidator
+            import logging
 
-            print("--- Configuration Check Output ---")
-            if result.stdout:
-                print(result.stdout)
-            if result.stderr:
-                print("Errors:")
-                print(result.stderr)
+            # Create logger for validator
+            logger = logging.getLogger('ConfigCheck')
+            logger.setLevel(logging.INFO)
 
-            if result.returncode == 0:
-                print("\n✅ Configuration check passed")
+            # Create validator
+            validator = ConfigValidator(self.config, logger)
+
+            # Get detailed validation report
+            passed, failed = validator.get_validation_report()
+
+            print("--- Configuration Validation Report ---")
+            print()
+
+            if passed:
+                print("Passed Checks:")
+                for check in passed:
+                    print(f"  {check}")
+                print()
+
+            if failed:
+                print("Failed Checks:")
+                for check in failed:
+                    print(f"  {check}")
+                print()
+
+            # Run full check
+            success = validator.check_configuration()
+
+            if success:
+                print("✅ Configuration check passed")
+
+                # Test NNTP connection
+                print()
+                print("Testing NNTP connection...")
+                try:
+                    from src.nntp_module import NNTPModule
+                    nntp = NNTPModule(self.config, logger)
+                    if nntp.test_connection():
+                        print("✅ NNTP connection test passed")
+                    else:
+                        print("❌ NNTP connection test failed")
+                except Exception as e:
+                    print(f"❌ NNTP connection test error: {e}")
             else:
-                print(f"\n❌ Configuration check failed (exit code {result.returncode})")
+                print("❌ Configuration check failed")
 
-        except subprocess.TimeoutExpired:
-            self.show_error("Configuration check timed out")
         except Exception as e:
             self.show_error(f"Error running configuration check: {e}")
 
+        print()
         self.pause()
 
 

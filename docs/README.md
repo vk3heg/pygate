@@ -431,10 +431,12 @@ The PyGate admin panel provides six main functions accessible through a simple m
 - **Dependency versions**
 
 ### 4. Configuration Check
-- **Validate all settings** in pygate.cfg
-- **Test network connections**
-- **Verify file permissions** and directory structure
-- **Dependency checking**
+- **Comprehensive validation** of pygate.cfg settings
+- **Detailed pass/fail report** showing all validation checks
+- **Binkd verification** - checks for binkd.config and binkd binary
+- **Directory validation** - verifies all required directories exist
+- **NNTP connection test** - confirms server connectivity
+- **Fast execution** - direct validation without subprocess overhead
 
 ### 5. Hold Message Manager
 - **Review pending messages** held for approval
@@ -888,6 +890,7 @@ pygate/
 ├── README.md              # This documentation
 ├── src/                   # Python modules
 │   ├── gateway.py         # Core gateway module
+│   ├── config_validator.py # Configuration validation module
 │   ├── nntp_module.py     # NNTP handling
 │   ├── fidonet_module.py  # FidoNet packet processing
 │   ├── hold_module.py     # Message hold system

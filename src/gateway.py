@@ -139,7 +139,7 @@ class Gateway:
             # First, process any approved held messages for NNTP posting
             self.process_approved_messages_to_nntp()
 
-            inbound_dir = self.config.get('FidoNet', 'inbound_dir')
+            inbound_dir = self.config.get('Files', 'inbound_dir')
             if not os.path.exists(inbound_dir):
                 self.logger.warning(f"Inbound directory {inbound_dir} does not exist")
                 return True  # Not an error if no inbound
@@ -229,7 +229,7 @@ class Gateway:
         self.logger.info("Starting areafix-only processing")
 
         try:
-            inbound_dir = self.config.get('FidoNet', 'inbound_dir')
+            inbound_dir = self.config.get('Files', 'inbound_dir')
             if not os.path.exists(inbound_dir):
                 self.logger.warning(f"Inbound directory {inbound_dir} does not exist")
                 return True  # Not an error if no inbound
@@ -1005,37 +1005,15 @@ class Gateway:
         return self.fidonet.create_packets()
 
     def check_configuration(self) -> bool:
-        """Check gateway configuration"""
-        self.logger.info("Checking gateway configuration")
+        """
+        Check gateway configuration (deprecated - use ConfigValidator instead)
 
-        errors = []
+        This method is kept for backward compatibility but delegates to ConfigValidator.
+        """
+        from .config_validator import ConfigValidator
 
-        # Check FidoNet configuration
-        if not self.config.get('FidoNet', 'gateway_address', ):
-            errors.append("FidoNet address not configured")
-
-        # Check NNTP configuration
-        if not self.config.get('NNTP', 'host', ):
-            errors.append("NNTP host not configured")
-
-        # Check directories
-        dirs_to_check = ['inbound_dir', 'outbound_dir', 'temp_dir']
-        for dir_key in dirs_to_check:
-            dir_path = self.config.get('FidoNet', dir_key, )
-            if dir_path and not os.path.exists(dir_path):
-                try:
-                    os.makedirs(dir_path, exist_ok=True)
-                    self.logger.info(f"Created directory: {dir_path}")
-                except Exception as e:
-                    errors.append(f"Cannot create directory {dir_path}: {e}")
-
-        if errors:
-            for error in errors:
-                self.logger.error(error)
-            return False
-
-        self.logger.info("Configuration check passed")
-        return True
+        validator = ConfigValidator(self.config, self.logger)
+        return validator.check_configuration()
 
     def maintenance(self):
         """Perform maintenance tasks"""
@@ -1043,7 +1021,7 @@ class Gateway:
 
         # Clean up old processed packets
         try:
-            inbound_dir = Path(self.config.get('FidoNet', 'inbound_dir'))
+            inbound_dir = Path(self.config.get('Files', 'inbound_dir'))
             processed_dir = inbound_dir / "processed"
 
             if processed_dir.exists():

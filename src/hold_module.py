@@ -19,7 +19,7 @@ class MessageHoldModule:
     def __init__(self, config, logger):
         self.config = config
         self.logger = logger
-        self.hold_dir = Path(self.config.get('FidoNet', 'hold_dir', fallback='hold'))
+        self.hold_dir = Path(self.config.get('Files', 'hold_dir', fallback='hold'))
         self.hold_dir.mkdir(exist_ok=True)
 
         # Create subdirectories for organization

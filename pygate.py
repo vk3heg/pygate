@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.gateway import Gateway
+from src.config_validator import ConfigValidator
 
 __version__ = "1.0"
 
@@ -113,7 +114,9 @@ Configuration:
 
         elif args.check:
             print("Checking configuration...")
-            success = gateway.check_configuration()
+            # Use ConfigValidator for comprehensive checks
+            validator = ConfigValidator(gateway.config, gateway.logger)
+            success = validator.check_configuration()
             if success:
                 print("Configuration check passed")
                 # Test NNTP connection

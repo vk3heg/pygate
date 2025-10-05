@@ -530,7 +530,7 @@ class FidoNetModule:
             return None
 
         try:
-            outbound_dir = self.config.get('FidoNet', 'outbound_dir')
+            outbound_dir = self.config.get('Files', 'outbound_dir')
             os.makedirs(outbound_dir, exist_ok=True)
 
             # Generate packet filename in 8.3 DOS format
