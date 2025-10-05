@@ -812,7 +812,7 @@ class FidoNetModule:
         gateway_addr = self.config.get('FidoNet', 'gateway_address')
         if not gateway_addr:
             raise ValueError("gateway_address must be configured in [FidoNet] section")
-        origin_name = self.config.get('Gateway', 'origin_line')
+        origin_name = self.config.get('FidoNet', 'origin_line')
         return f"{origin_name} ({gateway_addr})"
 
     def get_our_address(self) -> str:

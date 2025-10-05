@@ -658,7 +658,7 @@ class Gateway:
             'subject': nntp_message.get('subject', ''),
             'datetime': message_date,
             'text': nntp_message.get('body', ''),
-            'origin': f"{self.config.get('Gateway', 'origin_line')} ({gateway_address})",
+            'origin': f"{self.config.get('FidoNet', 'origin_line')} ({gateway_address})",
             'msgid': self.generate_fido_msgid(nntp_message.get('message_id', '')),
             'reply': self.generate_fido_reply(nntp_message.get('references', '')),
             # FSC-0043.002 echomail trailer components
@@ -992,7 +992,7 @@ class Gateway:
             'body': body,
             'message_id': fido_message.get('msgid', ''),
             'references': fido_message.get('reply', ''),
-            'organization': self.config.get('Gateway', 'origin_line'),
+            'organization': self.config.get('FidoNet', 'origin_line'),
             'original_charset': chrs_str,  # Keep track of original charset
             'area': fido_message.get('area', '')  # Include FidoNet area for mapping
         }

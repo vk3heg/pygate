@@ -290,7 +290,7 @@ class NNTPModule:
                 msg_datetime = datetime.now()
 
         lines.append(f"Date: {self.format_date(msg_datetime)}")
-        lines.append(f"Organization: {self.config.get('Gateway', 'origin_line')}")
+        lines.append(f"Organization: {self.config.get('FidoNet', 'origin_line')}")
 
         # Sender header - identifies the actual posting agent (gateway)
         gate_email = self.config.get('Mapping', 'gate_email', fallback=f'pygate@{self.get_message_id_domain()}')
