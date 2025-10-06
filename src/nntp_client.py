@@ -3,7 +3,7 @@
 Custom NNTP Client - Replacement for deprecated nntplib
 
 A lightweight NNTP client implementation that provides the functionality
-needed by PyGate's filter manager without relying on the deprecated nntplib.
+needed by PyGate's filter manager.
 """
 
 import socket
