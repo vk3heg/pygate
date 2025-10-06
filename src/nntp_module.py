@@ -181,7 +181,7 @@ class NNTPModule:
 
             # Log fetch results with context
             if is_new_newsgroup:
-                self.logger.info(f"Initial fetch from new newsgroup {newsgroup}: {len(messages)}/{fetch_limit} articles")
+                self.logger.info(f"Initial fetch from {newsgroup}: {len(messages)}/{fetch_limit} articles")
             else:
                 self.logger.info(f"Fetched {len(messages)} messages from {newsgroup}")
 

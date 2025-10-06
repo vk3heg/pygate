@@ -211,7 +211,7 @@ class Gateway:
                     packets_processed += 1
 
                 except Exception as e:
-                    self.logger.error(f"Error processing packet {packet_file}: {e}")
+                    self.logger.error(f"Error processing {packet_file}: {e}")
                     # Move to bad directory
                     bad_dir = Path(inbound_dir) / "bad"
                     bad_dir.mkdir(exist_ok=True)
@@ -272,7 +272,7 @@ class Gateway:
                         packets_processed += 1
                     else:
                         # Leave packet in inbound for next import cycle
-                        self.logger.info(f"Packet {packet_file.name} has {packet_other} non-areafix message(s), leaving in inbound for next import cycle")
+                        self.logger.info(f"Packet {packet_file.name} has {packet_other} non-areafix message(s), leaving in inbound")
                         packets_processed += 1
 
                 except Exception as e:
@@ -291,7 +291,7 @@ class Gateway:
 
     def export_messages(self) -> bool:
         """Export NNTP messages to FidoNet packets (MODE_EXPORT equivalent)"""
-        self.logger.info("Starting message export operation")
+        self.logger.info("Starting message export")
 
         try:
             # First, process any approved held messages
@@ -310,7 +310,7 @@ class Gateway:
                 if not newsgroup:
                     continue
 
-                self.logger.info(f"Processing area {area_tag} -> {newsgroup}")
+                self.logger.info(f"Processing area {newsgroup}")
 
                 try:
                     # Fetch messages from NNTP
@@ -352,14 +352,14 @@ class Gateway:
                         self.logger.info(f"Area {area_tag}: no new messages")
 
                 except Exception as e:
-                    self.logger.error(f"Error processing area {area_tag}: {e}")
+                    self.logger.error(f"Error processing {area_tag}: {e}")
 
             # Create outbound packets from exported messages
             if messages_exported > 0:
-                self.logger.info(f"Packing {messages_exported} exported messages into FidoNet packets...")
+                self.logger.info(f"Packing {messages_exported} messages into FidoNet packets...")
                 packet_success = self.fidonet.create_packets()
                 if packet_success:
-                    self.logger.info("All exported messages successfully packed into packets")
+                    self.logger.info("All exported messages packed into packets")
                 else:
                     self.logger.error("Failed to pack some exported messages")
                     return False
@@ -368,11 +368,11 @@ class Gateway:
 
             # Save updated areas configuration
             if self.save_areas_config(areas):
-                self.logger.info("Areas configuration updated with new article numbers")
+                self.logger.info("Newsrc updated with new article numbers")
             else:
-                self.logger.warning("Failed to update areas configuration")
+                self.logger.warning("Failed to update newsrc configuration")
 
-            self.logger.info(f"Export and pack complete: {messages_exported} messages exported and packed")
+            self.logger.info(f"Export and pack complete: {messages_exported} exported and packed")
             return True
 
         except Exception as e:
@@ -606,11 +606,11 @@ class Gateway:
                         high_msg = area_config.get('last_article', area_config.get('high_message', 0))
                         f.write(f"{newsgroup}: {low_msg}-{high_msg}\n")
 
-            self.logger.info(f"Updated areas configuration saved to {areas_file}")
+            self.logger.info(f"Updated newsrc configuration")
             return True
 
         except Exception as e:
-            self.logger.error(f"Error saving areas config: {e}")
+            self.logger.error(f"Error saving newsrc file: {e}")
             return False
 
     def parse_message_date(self, date_value):

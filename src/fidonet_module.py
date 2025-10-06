@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 PyGate FidoNet Module
+
 Handles FidoNet packet parsing and creation
 """
 
@@ -34,8 +35,6 @@ class FidoNetModule:
             os_display = 'Linux'
         elif os_name == 'Windows':
             os_display = 'Windows'
-        elif os_name == 'Darwin':
-            os_display = 'macOS'
         else:
             os_display = os_name  # Fall back to actual system name
 

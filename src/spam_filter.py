@@ -70,7 +70,7 @@ class SpamFilterModule:
         filter_file = self.config.get('SpamFilter', 'filter_file')
 
         if not os.path.exists(filter_file):
-            self.logger.warning(f"Filter file {filter_file} not found")
+            self.logger.warning(f"Filter {filter_file} not found")
             return patterns
 
         try:
@@ -96,7 +96,7 @@ class SpamFilterModule:
 
             # Log loaded patterns
             total_patterns = sum(len(p) for p in patterns.values())
-            self.logger.info(f"Loaded {total_patterns} filter patterns from {filter_file}")
+            self.logger.info(f"Loaded {total_patterns} filter patterns")
             for header, header_patterns in patterns.items():
                 if header_patterns:
                     self.logger.debug(f"  {header}: {len(header_patterns)} patterns")

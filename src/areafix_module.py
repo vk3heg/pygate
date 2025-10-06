@@ -2,7 +2,6 @@
 """
 PyGate Areafix Module
 Handles FidoNet areafix requests for newsgroup management
-Based on the existing fidonet_areafix_gateway.py
 """
 
 import os
@@ -489,7 +488,7 @@ class AreafixModule:
                             newsgroup_name = line.split()[0] if line.split() else ""
                             if newsgroup_name:
                                 available_newsgroups.add(newsgroup_name)
-                                self.logger.debug(f"Found available newsgroup '{newsgroup_name}' at line {line_num}")
+                                self.logger.debug(f"Found available newsgroup '{newsgroup_name}'")
             except Exception as e:
                 self.logger.error(f"Error reading newsgroups file: {e}")
 
@@ -604,7 +603,7 @@ class AreafixModule:
                 # Full gateway mode: Add to news server using ctlinnd (local or SSH)
                 success, output = self.execute_ctlinnd('newgroup', newsgroup_lower)
                 if success:
-                    self.logger.info(f"Successfully added newsgroup: {newsgroup_lower}")
+                    self.logger.info(f"Successfully added: {newsgroup_lower}")
                     return True
                 else:
                     self.logger.error(f"Failed to add newsgroup {newsgroup_lower} to news server: {output}")
@@ -648,7 +647,7 @@ class AreafixModule:
                 # Full gateway mode: Remove from news server using ctlinnd (local or SSH)
                 success, output = self.execute_ctlinnd('rmgroup', newsgroup)
                 if success:
-                    self.logger.info(f"Successfully removed newsgroup: {newsgroup}")
+                    self.logger.info(f"Successfully removed: {newsgroup}")
                     return True
                 else:
                     self.logger.error(f"Failed to remove newsgroup {newsgroup} from news server: {output}")
@@ -757,7 +756,7 @@ class AreafixModule:
                 # Create the packet file
                 packet_success = fidonet.create_packets()
                 if packet_success:
-                    self.logger.info(f"Areafix response packet created for {response_message['to_name']}")
+                    self.logger.info(f"Areafix response created for {response_message['to_name']}")
                     return True
                 else:
                     self.logger.error("Failed to create areafix response packet")
@@ -853,14 +852,14 @@ class AreafixModule:
         try:
             newsgroup_lower = newsgroup.lower()
             newsgroups_file = self.config.get('Files', 'newsgrouplist')
-            self.logger.debug(f"Searching for newsgroup '{newsgroup_lower}' in newsgrouplist")
+            self.logger.debug(f"Searching for '{newsgroup_lower}' in newsgrouplist")
 
             with open(newsgroups_file, 'r') as f:
                 for line_num, line in enumerate(f, 1):
                     # Extract just the newsgroup name (first field before whitespace)
                     newsgroup_name = line.split()[0].lower() if line.split() else ""
                     if newsgroup_name == newsgroup_lower:
-                        self.logger.debug(f"Found newsgroup '{newsgroup_lower}' at line {line_num} in newsgrouplist")
+                        self.logger.debug(f"Found '{newsgroup_lower}' in newsgrouplist")
                         return True
 
             self.logger.warning(f"Newsgroup '{newsgroup_lower}' not found in newsgrouplist after checking all entries")
