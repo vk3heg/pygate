@@ -290,7 +290,7 @@ class NNTPModule:
                 msg_datetime = datetime.now()
 
         lines.append(f"Date: {self.format_date(msg_datetime)}")
-        lines.append(f"Organization: {self.config.get('Gateway', 'origin_line')}")
+        lines.append(f"Organization: {self.config.get('FidoNet', 'origin_line')}")
 
         # Sender header - identifies the actual posting agent (gateway)
         gate_email = self.config.get('Mapping', 'gate_email', fallback=f'pygate@{self.get_message_id_domain()}')
@@ -445,7 +445,7 @@ class NNTPModule:
         """Extract plain text from message body, handling MIME content"""
         try:
             # Join body lines to reconstruct the message
-            body_text = '\n'.join(body_lines)
+            body_text = '\n\n'.join(body_lines)
 
             # Get content type
             content_type = headers.get('content-type', 'text/plain')
@@ -482,7 +482,7 @@ class NNTPModule:
 
             if text_parts:
                 # Join text parts and only strip trailing whitespace (preserve blank lines within body)
-                result = '\n'.join(text_parts)
+                result = '\n\n'.join(text_parts)
                 # Only remove excessive trailing newlines, but preserve internal blank lines
                 return result.rstrip('\n') + '\n' if result.rstrip() else result.rstrip()
 
