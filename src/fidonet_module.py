@@ -643,15 +643,10 @@ class FidoNetModule:
 
         f.write(msg_header)
 
-        # Write date string (exactly 20 bytes, NOT null terminated per FTS-0001.016)
+        # Write date string (null-terminated like other fields)
         date_str = message['datetime'].strftime('%d %b %y  %H:%M:%S')
-        # Ensure exactly 20 bytes by padding or truncating
         date_bytes = date_str.encode('cp437', errors='replace')
-        if len(date_bytes) < 20:
-            date_bytes = date_bytes.ljust(20, b' ')  # Pad with spaces
-        elif len(date_bytes) > 20:
-            date_bytes = date_bytes[:20]  # Truncate
-        f.write(date_bytes)  # No null terminator for DateTime field
+        f.write(date_bytes + b'\x00')  # Null-terminated
 
         # Validate and truncate to_name to 35 chars (36 bytes - 1 null terminator)
         to_name = message['to_name']
