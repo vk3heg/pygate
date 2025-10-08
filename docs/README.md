@@ -458,7 +458,7 @@ Complete newsrc file management with advanced features:
 #### Newsgroup Management
 - **Add newsgroups**: Interactive guided setup with validation
   - Newsgroup name validation (format checking)
-  - Water mark configuration (low/high article numbers)
+  - Water mark configuration (low/high article numbers, default high water mark: 1)
   - Duplicate prevention
   - **Automatic NNTP server integration** via ctlinnd
   - **Delete newsgroups**: Multiple selection methods
@@ -532,7 +532,7 @@ Add Newsgroup Entry
 
 Newsgroup name: alt.test.new
 Low water mark (default: 0): 0
-High water mark (default: 0): 0
+High water mark (default: 1): 100
 
 New entry to add:
   alt.test.new: 0-0

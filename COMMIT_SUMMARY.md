@@ -1,193 +1,121 @@
-# Wildcard Protection - Commit Summary
+# PyGate Changes Summary
 
-## Changes Made
+## Admin Panel Improvements
 
-### Modified Files
+### High Water Mark Default (admin_panel.py)
+**Issue**: When adding newsgroups with high water mark set to 0, NNTP fetch operations would fail with "cannot read from timed out
+  object" errors.
 
-1. **src/areafix_module.py**
-   - Added wildcard protection to `__init__()` method (lines 23-25)
-   - Added `check_wildcard_protection()` method (lines 52-70)
-   - Integrated protection check into `process_areafix_message()` (lines 80-103)
-   - Blocks `*` and `+*` patterns
-   - Blocks excessive subscriptions (>100 areas, configurable)
-   - Sends helpful rejection messages to users
+**Changes**:
+- Changed high water mark default from 0 to 1 in newsgroup manager
+- Now prompts: `High water mark (default: 1):`
+- Prevents timeout errors when fetching from NNTP servers
 
-2. **pygate.cfg**
-   - Reorganized sections for better logical grouping:
-     - Gateway + Mapping (core identity)
-     - FidoNet (addresses and settings)
-     - Areafix + Arearemap + Areafixfooter (all areafix settings together)
-     - NNTP + SSH (server connection)
-     - Files (directories and paths - moved from FidoNet section)
-     - SpamFilter (filtering settings)
-   - Added descriptive comment for outbound_dir explaining PyGate packet output and binkd filebox method
-   - Improved configuration file maintainability and readability
+**Location**: admin_panel.py, newsgroup manager section
 
-3. **docs/README.md**
-   - Updated features list to mention wildcard protection
-   - Added new section: "Areafix Wildcard Protection" (after Spam Filtering section)
-   - Includes configuration examples, usage examples, and logging info
-   - Fully integrated into existing documentation
-   - Fixed documentation issues:
-     - Added gate.bat (Windows) references alongside gate.sh (Linux) throughout
-     - Added backup/ directory to File Structure section under data/hold/
-     - Added gate.bat to File Structure section under bin/
-     - Corrected pygate.cfg location (root directory, not config/)
-     - Added binkd installation instructions for both Linux and Windows
-     - Added Windows Task Scheduler setup instructions alongside cron examples
+### Double "Press Enter" Bug Fix (admin_panel.py)
+**Issue**: Users had to press Enter twice after error messages throughout the admin panel.
 
-4. **src/gateway.py**
-   - Refactored `check_configuration()` to delegate to ConfigValidator
-   - Removed validation logic (moved to config_validator.py)
-   - Gateway now focuses only on gating operations
-   - Method kept for backward compatibility
+**Root Cause**: `show_error()` method already calls `pause()` internally, but many locations were calling `self.pause()` again
+  after `show_error()`.
 
-5. **pygate.py**
-   - Imported ConfigValidator module
-   - Updated `--check` command to use ConfigValidator directly
-   - Improved configuration checking workflow
+**Changes**:
+- Removed duplicate `self.pause()` calls after all `show_error()` invocations
+- Affected multiple locations:
+  - Newsgroup manager (add, edit, delete operations)
+  - Newsrc manager menu
+  - Filter manager
+  - Network manager
+  - Configuration manager
+  - Various validation error handlers
 
-6. **admin_panel.py**
-   - Updated option 4 (Configuration Check) to use ConfigValidator directly
-   - No longer runs pygate.py as subprocess (faster execution)
-   - Shows detailed validation report with pass/fail breakdown
-   - Added NNTP connection testing after config validation
+**Impact**: Improved user experience - single Enter press after errors
 
-### New Files
+### Log Viewer Improvements (admin_panel.py)
+**Changes**:
+1. **Navigation**: Changed "press 'b' for back" to "press 'Q'" for consistency
+2. **Directory Scope**: Limited log search to `data/logs/` directory only (previously searched entire PyGate structure)
+3. **Display**: Removed `data/logs/` prefix from filenames - shows just the filename
+4. **Menu Flow**: Fixed "Q. Back to main menu" to return to log file selection menu instead of admin main menu
+5. **Date Format**: Changed from `2025-10-08 12:00` to `03-Oct-25 12:00` for consistency
 
-7. **src/config_validator.py**
-   - New dedicated configuration validation module
-   - ConfigValidator class with comprehensive validation logic
-   - Checks FidoNet address, NNTP host, directories, binkd.config, binkd binary
-   - `get_validation_report()` method for detailed pass/fail breakdown
-   - Clean separation of concerns from gateway module
+**Files Modified**:
+- `get_log_files()`: Updated glob patterns to search only `data/logs/`
+- `log_viewer()`: Added outer loop for proper menu navigation
+- Display logic: Uses `os.path.basename()` for filename display
 
-8. **docs/WILDCARD_PROTECTION.md**
-   - Detailed standalone documentation
-   - Examples of blocked and allowed requests
-   - Configuration options
-   - Comparison with HPT filter
+### Filter Manager (src/filter_manager.py)
+**Changes**:
+- Changed menu option from "3. Exit to Main Menu" to "Q. Exit to Main Menu"
+- Updated input validation from `if mode == '3'` to `if mode.upper() == 'Q'`
 
-9. **docs/PYGATE_PROTECTION_SUMMARY.md**
-   - Quick reference summary
-   - Benefits and features overview
-   - Testing instructions
+**Consistency**: Matches other PyGate menus that use 'Q' for exit
 
-## What This Adds
+## Date/Time Format Standardization
 
-### Security Features
-- **Prevents wildcard subscriptions**: Users can't subscribe to all newsgroups with `*`
-- **Limits excessive requests**: Maximum 100 areas per request (configurable)
-- **Educational responses**: Sends helpful messages explaining why blocked
-
-### Architecture Improvements
-- **Separation of concerns**: Configuration validation separated from gateway operations
-- **Dedicated validator module**: ConfigValidator handles all deployment/setup validation
-- **Cleaner gateway**: Gateway module focuses only on message gating operations
-- **Better admin panel**: Direct validation with detailed pass/fail reports (no subprocess overhead)
-
-### User Experience
-- **Automatic protection**: Works without configuration
-- **Helpful feedback**: Users learn correct areafix usage
-- **Configurable limits**: Admins can adjust to their needs
-- **Better config checking**: Admin panel shows detailed validation breakdown
-
-### Admin Benefits
-- **Full logging**: All blocks recorded
-- **No maintenance**: Works automatically
-- **Backward compatible**: Doesn't break existing functionality
-- **Enhanced validation**: Now checks for binkd.config and binkd binary
-
-## Configuration (Optional)
-
-Users can optionally add to `pygate.cfg` (in root directory):
-
-```ini
-[Areafix]
-max_areas_per_request = 100
+### Standard Format
+All PyGate components now use consistent date/time format:
+```
+DD-Mon-YY HH:MM:SS - Message
 ```
 
-Default is 100 if not specified.
+Example: `08-Oct-25 13:25:17 - INFO - Starting PyGate`
 
-## Testing
+### Files Modified
 
-No testing required - feature is non-breaking:
-- Existing areafix commands work unchanged
-- Only adds protection layer
-- Defaults are sensible
+#### bin/gate.sh
+**Changes**:
+- Changed log format from `[DD-Mon-YYYY HH:MM:SS]` to `DD-Mon-YYYY HH:MM:SS -`
+- Removed square brackets for cleaner output
+- Updated `log()` function:
+  ```bash
+  log() {
+      echo "$(date '+%d-%b-%Y %H:%M:%S') - $1" | tee -a "$LOGFILE"
+  }
+  ```
 
-## Documentation
+#### admin_panel.py
+**Changes**:
+- Log file selection menu: Changed date format from `%Y-%m-%d %H:%M` to `%d-%b-%y %H:%M`
+- Affects log file listing display
 
-All documentation updated and integrated:
-- ✅ Main README updated with new section
-- ✅ Standalone detailed docs in docs/
-- ✅ Quick reference summary available
-- ✅ Examples and configuration explained
+**Impact**: All timestamps across PyGate now use the same format for easier log correlation and troubleshooting
 
-## Commit Message Suggestion
+## Summary of Changes
 
-```
-Add wildcard protection, refactor validation, improve configuration
+### Files Modified
+1. **admin_panel.py**
+   - High water mark default (0 → 1)
+   - Removed 20+ duplicate `pause()` calls
+   - Log viewer improvements (navigation, scope, display)
+   - Date format standardization
 
-Areafix Wildcard Protection:
-- Blocks wildcard '*' and '+*' subscription attempts
-- Limits excessive subscriptions (default: 100 areas per request)
-- Sends helpful rejection messages to users explaining alternatives
-- Configurable via max_areas_per_request in [Areafix] section
-- Prevents accidental subscription to all 30,000+ newsgroups
+2. **src/filter_manager.py**
+   - Exit option changed (3 → Q)
+   - Consistent with other menus
 
-Architecture Refactoring:
-- Created new src/config_validator.py module for deployment validation
-- Separated configuration validation from gateway operations
-- Gateway module now focuses only on message gating
-- Admin panel uses ConfigValidator directly (no subprocess overhead)
-- Better separation of concerns across modules
+3. **bin/gate.sh**
+   - Date/time format standardization
+   - Removed square brackets from timestamps
 
-Configuration Validation Improvements:
-- Added checks for binkd.config file presence
-- Added checks for binkd binary (Linux and Windows)
-- Detailed pass/fail validation reports in admin panel
-- Faster configuration checking (no subprocess)
+### Impact
+- **Reliability**: Fixed NNTP timeout errors with proper high water mark default
+- **Usability**: Eliminated double Enter press requirement throughout admin panel
+- **Consistency**: Standardized date/time format across all PyGate components
+- **User Experience**: Improved log viewer navigation and display
+- **Maintainability**: Cleaner, more consistent codebase
 
-Configuration File Improvements:
-- Reorganized pygate.cfg sections for better logical grouping
-- Moved directories from [FidoNet] to [Files] section
-- All areafix settings now grouped together
-- Added contact information to README
+### Testing Recommendations
+- Test newsgroup addition with default high water mark
+- Verify single Enter press after all error messages
+- Check log viewer navigation flow
+- Confirm date/time format consistency across all logs
+- Test filter manager exit with 'Q' key
 
-Documentation Updates:
-- Added comprehensive Areafix Wildcard Protection section
-- Fixed Windows support documentation (gate.bat references)
-- Corrected file paths and locations throughout
-- Added binkd installation instructions for both platforms
-- Improved File Structure section accuracy
-- Added author contact information
+## Configuration Notes
 
-Backward compatible - existing functionality unchanged.
-```
+No configuration file changes required. All changes are internal code improvements that maintain backward compatibility.
 
-## Files to Commit
+## Upgrade Path
 
-```bash
-git add pygate.cfg
-git add pygate.py
-git add admin_panel.py
-git add src/areafix_module.py
-git add src/gateway.py
-git add src/config_validator.py
-git add docs/README.md
-git add docs/WILDCARD_PROTECTION.md
-git add docs/PYGATE_PROTECTION_SUMMARY.md
-git commit -m "Add wildcard protection, refactor validation, improve configuration"
-```
-
-## Summary
-
-This is a **non-breaking enhancement** that:
-- Adds security and user education to PyGate's areafix functionality
-- Refactors validation logic into a dedicated module for better architecture
-- Improves configuration organization and validation checks
-- Enhances admin panel with detailed validation reports
-- Updates documentation for better Windows support and accuracy
-
-All existing features work unchanged. New protection works automatically with sensible defaults.
+These changes are non-breaking and can be applied to existing PyGate installations without configuration changes or data migration.

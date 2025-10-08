@@ -15,7 +15,7 @@ DEBUG=${DEBUG:-0}
 
 # Logging function
 log() {
-    echo "[$(date '+%d-%b-%Y %H:%M:%S')] $1" | tee -a "$LOGFILE"
+    echo "$(date '+%d-%b-%Y %H:%M:%S') - $1" | tee -a "$LOGFILE"
 }
 
 # Debug logging
@@ -126,7 +126,7 @@ generate_stats() {
     local processed_count=$(find "$PYGATE_DIR/data/inbound/processed" -name "*.pkt" -mtime -1 2>/dev/null | wc -l)
 
     # Log statistics
-    echo "[$(date '+%d-%b-%Y %H:%M:%S')] Inbound: $inbound_count, Outbound: $outbound_count, Held: $held_count, Processed(24h): $processed_count" >> "$stats_file"
+    echo "$(date '+%d-%b-%Y %H:%M:%S') - Inbound: $inbound_count, Outbound: $outbound_count, Held: $held_count, Processed(24h): $processed_count" >> "$stats_file"
 
     # Rotate stats file if it gets too large (keep last 1000 lines)
     if [[ -f "$stats_file" ]] && [[ $(wc -l < "$stats_file") -gt 1000 ]]; then
@@ -242,7 +242,7 @@ rotate_logs() {
         if [[ $size_mb -gt $max_size_mb ]]; then
             debug "Rotating log file (size: ${size_mb}MB)"
             cp "$LOGFILE" "${LOGFILE}.old"
-            echo "[$(date '+%d-%b-%Y %H:%M:%S')] Log rotated (previous log saved as gate.log.old)" > "$LOGFILE"
+            echo "$(date '+%d-%b-%Y %H:%M:%S') - Log rotated (previous log saved as gate.log.old)" > "$LOGFILE"
         fi
     fi
 }

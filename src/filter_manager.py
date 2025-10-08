@@ -891,11 +891,11 @@ class FilterManager:
                 print("\nMode selection:")
                 print("1. Analyze single message by Message-ID")
                 print("2. Browse messages by date range")
-                print("3. Exit")
+                print("Q. Exit to Main Menu")
 
-                mode = input("Select mode (1-3): ").strip()
+                mode = input("Select mode (1-2, Q): ").strip()
 
-                if mode == '3':
+                if mode.upper() == 'Q':
                     break
                 elif mode == '1':
                     self.single_message_mode()

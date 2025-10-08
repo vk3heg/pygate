@@ -153,14 +153,10 @@ class AdminPanel:
         """Get list of available log files"""
         log_files = []
 
-        # Look for log files in common locations
+        # Look for log files in data/logs directory only
         log_patterns = [
             'data/logs/*.log',
-            'data/logs/*.txt',
-            'logs/*.log',
-            'logs/*.txt',
-            '*.log',
-            '*.txt'
+            'data/logs/*.txt'
         ]
 
         for pattern in log_patterns:
@@ -169,13 +165,7 @@ class AdminPanel:
         # Remove duplicates and sort
         log_files = sorted(list(set(log_files)))
 
-        # Filter out non-log files
-        filtered_files = []
-        for file in log_files:
-            if any(keyword in file.lower() for keyword in ['log', 'error', 'debug', 'trace', 'gateway', 'pygate']):
-                filtered_files.append(file)
-
-        return filtered_files
+        return log_files
 
     def select_log_file(self) -> Optional[str]:
         """Let user select a log file"""
@@ -192,12 +182,14 @@ class AdminPanel:
         for i, file in enumerate(log_files, 1):
             file_size = self.get_file_size(file)
             mod_time = self.get_file_modified_time(file)
-            print(f"{i:2d}. {file:<30} ({file_size:>8}) {mod_time}")
+            # Display just the filename without the path
+            filename = os.path.basename(file)
+            print(f"{i:2d}. {filename:<30} ({file_size:>8}) {mod_time}")
 
         print()
-        choice = self.get_input(f"Select log file (1-{len(log_files)}) or 'b' for back: ")
+        choice = self.get_input(f"Select log file (1-{len(log_files)}) or 'Q' to go back: ")
 
-        if choice.lower() == 'b':
+        if choice.upper() == 'Q':
             return None
 
         try:
@@ -269,7 +261,7 @@ class AdminPanel:
         """Get file modification time"""
         try:
             mtime = os.path.getmtime(filepath)
-            return datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
+            return datetime.fromtimestamp(mtime).strftime('%d-%b-%y %H:%M')
         except:
             return "Unknown"
 
@@ -321,10 +313,10 @@ class AdminPanel:
         """Show log viewer navigation help"""
         if search_term:
             print("N/Enter. Next match | P. Previous page | L. Last page | G. Go to line")
-            print("S. New search | C. Clear search | Q. Back to main menu")
+            print("S. New search | C. Clear search | Q. Back to log file menu")
         else:
             print("N. Next page | P. Previous page | L. Last page | G. Go to line | S. Search")
-            print("C. Clear search | Q. Back to main menu")
+            print("C. Clear search | Q. Back to log file menu")
 
     def search_in_log(self, lines: List[str], search_term: str, start_from: int = 0) -> int:
         """Search for term in log lines, return line number or -1 if not found"""
@@ -343,97 +335,93 @@ class AdminPanel:
 
     def log_viewer(self):
         """Interactive log file viewer with paging"""
-        # Select log file
-        selected_file = self.select_log_file()
-        if not selected_file:
-            return
-
-        self.current_logfile = selected_file
-
-        # Read file lines
-        lines = self.read_log_file_lines(selected_file)
-        if not lines:
-            return
-
-        current_line = 0
-        current_search_term = None  # Track current search term for continuing searches
-
         while True:
-            # Get current page size (recalculated each time in case terminal was resized)
-            page_size = self.get_log_viewer_page_size()
+            # Select log file
+            selected_file = self.select_log_file()
+            if not selected_file:
+                return
 
-            self.display_log_page(lines, current_line, current_search_term)
+            self.current_logfile = selected_file
 
-            command = self.get_input("Command: ").upper().strip()
+            # Read file lines
+            lines = self.read_log_file_lines(selected_file)
+            if not lines:
+                continue
 
-            if command == 'Q':
-                break
-            elif command in ['N', 'NEXT', '']:
-                # Next page or continue search if search is active
-                if current_search_term:
-                    # Continue searching from current position
-                    found_line = self.search_in_log(lines, current_search_term, current_line + page_size)
+            current_line = 0
+            current_search_term = None  # Track current search term for continuing searches
+
+            while True:
+                # Get current page size (recalculated each time in case terminal was resized)
+                page_size = self.get_log_viewer_page_size()
+
+                self.display_log_page(lines, current_line, current_search_term)
+
+                command = self.get_input("Command: ").upper().strip()
+
+                if command == 'Q':
+                    break
+                elif command in ['N', 'NEXT', '']:
+                    # Next page or continue search if search is active
+                    if current_search_term:
+                        # Continue searching from current position
+                        found_line = self.search_in_log(lines, current_search_term, current_line + page_size)
+                        if found_line != -1:
+                            current_line = found_line - (found_line % page_size)
+                            self.show_info(f"Found '{current_search_term}' at line {found_line + 1}")
+                            self.pause()
+                        else:
+                            self.show_error(f"No more matches for '{current_search_term}'")
+                    else:
+                        # Normal next page
+                        if current_line + page_size < len(lines):
+                            current_line += page_size
+                elif command in ['P', 'PREV', 'PREVIOUS']:
+                    # Previous page
+                    current_line = max(0, current_line - page_size)
+                elif command in ['L', 'LAST']:
+                    # Last page
+                    total_pages = (len(lines) + page_size - 1) // page_size
+                    current_line = (total_pages - 1) * page_size
+                elif command in ['G', 'GOTO']:
+                    # Go to specific line
+                    line_input = self.get_input("Go to line number: ")
+                    try:
+                        target_line = int(line_input) - 1
+                        if 0 <= target_line < len(lines):
+                            current_line = target_line - (target_line % page_size)
+                        else:
+                            self.show_error(f"Line number must be between 1 and {len(lines)}")
+                    except ValueError:
+                        self.show_error("Invalid line number")
+                elif command in ['S', 'SEARCH']:
+                    # Search - either new search or continue with current search
+                    search_input = self.get_input(f"Search for{' [' + current_search_term + ']' if current_search_term else ''}: ").strip()
+
+                    # If user just presses enter and there's a current search, continue it
+                    if not search_input and current_search_term:
+                        search_term = current_search_term
+                    elif search_input:
+                        search_term = search_input
+                        current_search_term = search_term  # Store new search term
+                    else:
+                        continue  # No search term and no current search
+
+                    # Search from next page
+                    found_line = self.search_in_log(lines, search_term, current_line + page_size)
                     if found_line != -1:
                         current_line = found_line - (found_line % page_size)
-                        self.show_info(f"Found '{current_search_term}' at line {found_line + 1}")
+                        self.show_info(f"Found '{search_term}' at line {found_line + 1}")
                         self.pause()
                     else:
-                        self.show_error(f"No more matches for '{current_search_term}'")
-                        self.pause()
-                else:
-                    # Normal next page
-                    if current_line + page_size < len(lines):
-                        current_line += page_size
-            elif command in ['P', 'PREV', 'PREVIOUS']:
-                # Previous page
-                current_line = max(0, current_line - page_size)
-            elif command in ['L', 'LAST']:
-                # Last page
-                total_pages = (len(lines) + page_size - 1) // page_size
-                current_line = (total_pages - 1) * page_size
-            elif command in ['G', 'GOTO']:
-                # Go to specific line
-                line_input = self.get_input("Go to line number: ")
-                try:
-                    target_line = int(line_input) - 1
-                    if 0 <= target_line < len(lines):
-                        current_line = target_line - (target_line % page_size)
-                    else:
-                        self.show_error(f"Line number must be between 1 and {len(lines)}")
-                        self.pause()
-                except ValueError:
-                    self.show_error("Invalid line number")
-                    self.pause()
-            elif command in ['S', 'SEARCH']:
-                # Search - either new search or continue with current search
-                search_input = self.get_input(f"Search for{' [' + current_search_term + ']' if current_search_term else ''}: ").strip()
-
-                # If user just presses enter and there's a current search, continue it
-                if not search_input and current_search_term:
-                    search_term = current_search_term
-                elif search_input:
-                    search_term = search_input
-                    current_search_term = search_term  # Store new search term
-                else:
-                    continue  # No search term and no current search
-
-                # Search from next page
-                found_line = self.search_in_log(lines, search_term, current_line + page_size)
-                if found_line != -1:
-                    current_line = found_line - (found_line % page_size)
-                    self.show_info(f"Found '{search_term}' at line {found_line + 1}")
+                        self.show_error(f"'{search_term}' not found")
+                elif command in ['C', 'CLEAR']:
+                    # Clear search
+                    current_search_term = None
+                    self.show_info("Search cleared")
                     self.pause()
                 else:
-                    self.show_error(f"'{search_term}' not found")
-                    self.pause()
-            elif command in ['C', 'CLEAR']:
-                # Clear search
-                current_search_term = None
-                self.show_info("Search cleared")
-                self.pause()
-            else:
-                self.show_error("Invalid command")
-                self.pause()
+                    self.show_error("Invalid command")
 
     def show_gateway_status(self):
         """Display gateway status and system information"""
@@ -605,7 +593,7 @@ class AdminPanel:
             print("1. View Held Messages")
             print("2. Release Held Message")
             print("3. Delete Held Message")
-            print("Q. Exit back to Admin Panel")
+            print("Q. Exit back to Main Menu")
             print()
 
             choice = self.get_input("Select option: ").upper()
@@ -1013,7 +1001,6 @@ class AdminPanel:
                 break
             else:
                 self.show_error("Invalid selection")
-                self.pause()
 
     def sort_newsrc_file(self, newsrc_file):
         """Sort newsrc file alphabetically"""
@@ -1025,7 +1012,6 @@ class AdminPanel:
 
         if not os.path.exists(newsrc_file):
             self.show_error(f"Newsrc file not found: {newsrc_file}")
-            self.pause()
             return
 
         try:
@@ -1081,7 +1067,6 @@ class AdminPanel:
             print("=" * 50)
             print()
             self.show_error(f"Newsrc file not found: {newsrc_file}")
-            self.pause()
             return
 
         try:
@@ -1214,12 +1199,10 @@ class AdminPanel:
                             current_page = found_page
                         else:
                             self.show_error(f"'{search_term}' not found")
-                            self.pause()
                 elif choice in ['C', 'CLEAR']:
                     current_search_term = None  # Clear search highlighting
                 else:
                     self.show_error("Invalid command")
-                    self.pause()
 
         except Exception as e:
             self.clear_screen()
@@ -1228,7 +1211,6 @@ class AdminPanel:
             print("=" * 50)
             print()
             self.show_error(f"Failed to read newsrc file: {e}")
-            self.pause()
 
     def search_newsrc_content(self, lines, search_term, lines_per_page):
         """Search for a newsgroup name in newsrc content and return the page number"""
@@ -1255,7 +1237,6 @@ class AdminPanel:
             print("=" * 50)
             print()
             self.show_error(f"Newsgroups file not found: {newsgroups_file}")
-            self.pause()
             return
 
         try:
@@ -1355,10 +1336,8 @@ class AdminPanel:
                             current_page = target_page
                         else:
                             self.show_error(f"Page must be between 1 and {total_pages}")
-                            self.pause()
                     except ValueError:
                         self.show_error("Invalid page number")
-                        self.pause()
                 elif choice in ['S', 'SEARCH']:
                     search_term = self.get_input("Search for newsgroup: ").strip()
                     if search_term:
@@ -1370,7 +1349,6 @@ class AdminPanel:
                             current_page = search_matches[0] // lines_per_page
                         else:
                             self.show_error(f"'{search_term}' not found")
-                            self.pause()
                 elif choice in ['>', 'NEXT_MATCH', 'NEXTMATCH']:
                     if search_matches and len(search_matches) > 1:
                         current_match_index = (current_match_index + 1) % len(search_matches)
@@ -1378,7 +1356,6 @@ class AdminPanel:
                         current_page = search_matches[current_match_index] // lines_per_page
                     elif not search_matches:
                         self.show_error("No active search. Use S to search first.")
-                        self.pause()
                 elif choice in ['<', 'PREV_MATCH', 'PREVMATCH']:
                     if search_matches and len(search_matches) > 1:
                         current_match_index = (current_match_index - 1) % len(search_matches)
@@ -1386,14 +1363,12 @@ class AdminPanel:
                         current_page = search_matches[current_match_index] // lines_per_page
                     elif not search_matches:
                         self.show_error("No active search. Use S to search first.")
-                        self.pause()
                 elif choice in ['C', 'CLEAR']:
                     current_search_term = None
                     search_matches = []
                     current_match_index = 0
                 else:
                     self.show_error("Invalid command")
-                    self.pause()
 
         except Exception as e:
             self.clear_screen()
@@ -1402,7 +1377,6 @@ class AdminPanel:
             print("=" * 50)
             print()
             self.show_error(f"Error reading newsgroups file: {e}")
-            self.pause()
 
     def search_newsgroups_content(self, lines, search_term, lines_per_page):
         """Search for a term in newsgroups lines and return all matching line numbers"""
@@ -1424,7 +1398,6 @@ class AdminPanel:
 
         if not os.path.exists(newsrc_file):
             self.show_error(f"Newsrc file not found: {newsrc_file}")
-            self.pause()
             return
 
         try:
@@ -1462,7 +1435,6 @@ class AdminPanel:
 
         if not backup_files:
             self.show_error("No backup files found")
-            self.pause()
             return
 
         backup_files.sort(reverse=True)  # Most recent first
@@ -1538,13 +1510,11 @@ class AdminPanel:
         newsgroup = self.get_input("Newsgroup name: ").strip()
         if not newsgroup:
             self.show_error("Newsgroup name cannot be empty")
-            self.pause()
             return
 
         # Validate newsgroup name format
         if not re.match(r'^[a-zA-Z0-9._-]+$', newsgroup):
             self.show_error("Invalid newsgroup name. Use only letters, numbers, dots, hyphens, and underscores.")
-            self.pause()
             return
 
         # Get low water mark
@@ -1558,13 +1528,12 @@ class AdminPanel:
                 raise ValueError("Water mark must be non-negative")
         except ValueError:
             self.show_error("Low water mark must be a non-negative integer")
-            self.pause()
             return
 
         # Get high water mark
-        high_mark = self.get_input(f"High water mark (default: {low_mark}): ").strip()
+        high_mark = self.get_input("High water mark (default: 1): ").strip()
         if not high_mark:
-            high_mark = low_mark
+            high_mark = "1"
 
         try:
             high_num = int(high_mark)
@@ -1572,7 +1541,6 @@ class AdminPanel:
                 raise ValueError("High water mark must be >= low water mark")
         except ValueError:
             self.show_error("High water mark must be >= low water mark and be an integer")
-            self.pause()
             return
 
         # Check if newsgroup already exists
@@ -1585,11 +1553,9 @@ class AdminPanel:
                             existing_group = line.split(':')[0].strip()
                             if existing_group.lower() == newsgroup.lower():
                                 self.show_error(f"Newsgroup '{newsgroup}' already exists in newsrc file")
-                                self.pause()
                                 return
             except Exception as e:
                 self.show_error(f"Error checking existing entries: {e}")
-                self.pause()
                 return
 
         # Create the new entry
@@ -1713,7 +1679,6 @@ class AdminPanel:
 
         if not os.path.exists(newsrc_file):
             self.show_error(f"Newsrc file not found: {newsrc_file}")
-            self.pause()
             return
 
         try:
@@ -1736,7 +1701,6 @@ class AdminPanel:
 
             if not entries:
                 self.show_error("No newsgroup entries found in file")
-                self.pause()
                 return
 
             # Display entries with numbers
@@ -1765,7 +1729,6 @@ class AdminPanel:
                     selected_entry = entries[selected_index]
                 else:
                     self.show_error(f"Invalid entry number. Must be 1-{len(entries)}")
-                    self.pause()
                     return
             except ValueError:
                 # Not a number, try to match by newsgroup name
@@ -1796,17 +1759,14 @@ class AdminPanel:
                                     selected_entry = entries[selected_index]
                                 else:
                                     self.show_error(f"Invalid selection")
-                                    self.pause()
                                     return
                             except ValueError:
                                 self.show_error("Invalid selection")
-                                self.pause()
                                 return
                             break
 
                 if selected_entry is None:
                     self.show_error(f"No newsgroup matching '{choice}' found")
-                    self.pause()
                     return
 
             # Show selected entry and confirm deletion
