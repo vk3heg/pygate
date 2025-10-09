@@ -44,6 +44,7 @@ class SpamFilterModule:
         self.add_filter(self.content_type_filter, "Content-Type Filter", priority=10)
         self.add_filter(self.message_id_filter, "Message-ID Filter", priority=9)
         self.add_filter(self.organization_filter, "Organization Filter", priority=9)
+        self.add_filter(self.injection_info_filter, "Injection-Info Filter", priority=9)
         self.add_filter(self.crosspost_filter, "Cross-Post Filter", priority=8)
 
         self.logger.info(f"Loaded {len(self.filters)} built-in spam filters")
@@ -64,7 +65,8 @@ class SpamFilterModule:
             'Newsgroups': [],
             'Content-Type': [],
             'Message-ID': [],
-            'Organization': []
+            'Organization': [],
+            'Injection-Info': []
         }
 
         filter_file = self.config.get('SpamFilter', 'filter_file')
@@ -204,6 +206,13 @@ class SpamFilterModule:
         headers = message.get('headers', {})
         organization = headers.get('organization', '')
         return self._check_pattern_match('Organization', organization)
+
+    def injection_info_filter(self, message: Dict[str, Any]) -> bool:
+        """Filter based on Injection-Info header patterns"""
+        # Get Injection-Info from headers dict if available
+        headers = message.get('headers', {})
+        injection_info = headers.get('injection-info', '')
+        return self._check_pattern_match('Injection-Info', injection_info)
 
     def crosspost_filter(self, message: Dict[str, Any]) -> bool:
         """Filter messages with excessive cross-posting"""
