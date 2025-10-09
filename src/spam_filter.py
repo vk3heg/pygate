@@ -46,6 +46,7 @@ class SpamFilterModule:
         self.add_filter(self.organization_filter, "Organization Filter", priority=9)
         self.add_filter(self.injection_info_filter, "Injection-Info Filter", priority=9)
         self.add_filter(self.nntp_posting_host_filter, "NNTP-Posting-Host Filter", priority=9)
+        self.add_filter(self.x_trace_filter, "X-Trace Filter", priority=9)
         self.add_filter(self.crosspost_filter, "Cross-Post Filter", priority=8)
 
         self.logger.info(f"Loaded {len(self.filters)} built-in spam filters")
@@ -68,7 +69,8 @@ class SpamFilterModule:
             'Message-ID': [],
             'Organization': [],
             'Injection-Info': [],
-            'NNTP-Posting-Host': []
+            'NNTP-Posting-Host': [],
+            'X-Trace': []
         }
 
         filter_file = self.config.get('SpamFilter', 'filter_file')
@@ -222,6 +224,13 @@ class SpamFilterModule:
         headers = message.get('headers', {})
         nntp_posting_host = headers.get('nntp-posting-host', '')
         return self._check_pattern_match('NNTP-Posting-Host', nntp_posting_host)
+
+    def x_trace_filter(self, message: Dict[str, Any]) -> bool:
+        """Filter based on X-Trace header patterns"""
+        # Get X-Trace from headers dict if available
+        headers = message.get('headers', {})
+        x_trace = headers.get('x-trace', '')
+        return self._check_pattern_match('X-Trace', x_trace)
 
     def crosspost_filter(self, message: Dict[str, Any]) -> bool:
         """Filter messages with excessive cross-posting"""
