@@ -23,6 +23,9 @@ if "%1"=="--help" goto :show_help
 if "%1"=="-h" goto :show_help
 if "%1"=="/?" goto :show_help
 
+REM Cache start date/time once at script startup for better performance
+for /f "tokens=*" %%a in ('powershell -Command "Get-Date -Format 'dd-MMM-yy'"') do set "CACHED_DATE=%%a"
+
 REM Main execution
 call :log "PyGate automation started (PID: %RANDOM%%RANDOM%)"
 call :rotate_logs
@@ -38,8 +41,10 @@ exit /b 0
 REM ===== Functions =====
 
 :log
-echo [%date:~6,4%-%date:~3,2%-%date:~0,2% %time:~0,8%] %~1 >> "%LOGFILE%"
-echo [%date:~6,4%-%date:~3,2%-%date:~0,2% %time:~0,8%] %~1
+REM Use cached date and Windows native time for fast logging
+set "timestamp=%CACHED_DATE% %TIME:~0,8%"
+echo [%timestamp%] %~1 >> "%LOGFILE%"
+echo [%timestamp%] %~1
 exit /b 0
 
 :debug
@@ -111,14 +116,14 @@ if !errorlevel! neq 0 (
 )
 
 REM Check configuration (try new location first, then old location)
-if exist "%PYGATE_DIR%\config\pygate.cfg" (
-    set "CONFIG_FILE=%PYGATE_DIR%\config\pygate.cfg"
-    call :debug "Using config file: config\pygate.cfg"
+if exist "%PYGATE_DIR%\pygate.cfg" (
+    set "CONFIG_FILE=%PYGATE_DIR%\pygate.cfg"
+    call :debug "Using config file: pygate.cfg"
 ) else if exist "%PYGATE_DIR%\pygate.cfg" (
     set "CONFIG_FILE=%PYGATE_DIR%\pygate.cfg"
-    call :debug "Using config file: pygate.cfg (consider moving to config\ directory)"
+    call :debug "Using config file: pygate.cfg)"
 ) else (
-    call :error_exit "Configuration file not found (checked config\pygate.cfg and pygate.cfg)"
+    call :error_exit "Configuration file not found (checked pygate.cfg)"
 )
 
 REM Check required directories
@@ -162,7 +167,8 @@ if exist "%PYGATE_DIR%\data\inbound\processed" (
 )
 
 REM Log statistics
-echo [%date:~6,4%-%date:~3,2%-%date:~0,2% %time:~0,8%] Inbound: !inbound_count!, Outbound: !outbound_count!, Held: !held_count!, Processed(24h): !processed_count! >> "%stats_file%"
+set "timestamp=%CACHED_DATE% %TIME:~0,8%"
+echo [!timestamp!] Inbound: !inbound_count!, Outbound: !outbound_count!, Held: !held_count!, Processed(24h): !processed_count! >> "%stats_file%"
 
 REM Rotate stats file if it gets too large (keep last 500 lines)
 if exist "%stats_file%" (
@@ -244,7 +250,7 @@ call :run_with_timeout "python pygate.py --pack" 180 "Pack outbound messages"
 if !errorlevel! neq 0 call :log "WARNING: Pack phase failed"
 
 REM Connect to FidoNet hub with binkd to send/receive packets
-if exist "%PYGATE_DIR%\bin\binkd.exe" (
+if exist "%PYGATE_DIR%\bin\BINKDWIN.EXE" (
     if exist "%CONFIG_FILE%" (
         REM Extract linked_address from pygate.cfg
         for /f "tokens=2 delims==" %%a in ('findstr /r "^linked_address" "%CONFIG_FILE%"') do (
@@ -255,12 +261,12 @@ if exist "%PYGATE_DIR%\bin\binkd.exe" (
         if not "!linked_address!"=="" (
             set "binkd_config=%PYGATE_DIR%\config\binkd.config"
             if not exist "!binkd_config!" (
-                if exist "%PYGATE_DIR%\binkd.config" set "binkd_config=%PYGATE_DIR%\binkd.config"
+                if exist "%PYGATE_DIR%\config\binkd.config" set "binkd_config=%PYGATE_DIR%\config\binkd.config"
             )
 
             if exist "!binkd_config!" (
                 call :log "Connecting to FidoNet hub (!linked_address!)"
-                call :run_with_timeout "%PYGATE_DIR%\bin\binkd.exe -p -P !linked_address! !binkd_config!" 300 "FidoNet hub connection (binkd)"
+                call :run_with_timeout "%PYGATE_DIR%\bin\BINKDWIN.EXE -p -P !linked_address! !binkd_config!" 300 "FidoNet hub connection (binkd)"
                 if !errorlevel! neq 0 call :log "WARNING: FidoNet hub connection failed"
             ) else (
                 call :log "WARNING: binkd.config not found - skipping FidoNet connection"
@@ -301,7 +307,9 @@ if exist "%LOGFILE%" (
     if !size_mb! gtr %max_size_mb% (
         call :debug "Rotating log file (size: !size_mb!MB)"
         copy /y "%LOGFILE%" "%LOGFILE%.old" >nul 2>&1
-        echo [%date:~6,4%-%date:~3,2%-%date:~0,2% %time:~0,8%] Log rotated (previous log saved as gate.log.old) > "%LOGFILE%"
+        REM Use cached date for rotation (only happens rarely so performance is fine)
+        set "timestamp=%CACHED_DATE% %TIME:~0,8%"
+        echo [!timestamp!] Log rotated (previous log saved as gate.log.old) > "%LOGFILE%"
     )
 )
 exit /b 0

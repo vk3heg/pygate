@@ -62,16 +62,19 @@ class ConfigValidator:
         else:
             self.logger.info(f"Found binkd configuration: {binkd_config_path}")
 
-        # Check for binkd binary (both Linux and Windows)
+        # Check for binkd binary (Linux and Windows variants)
         binkd_binary_linux = os.path.join('bin', 'binkd')
         binkd_binary_windows = os.path.join('bin', 'binkd.exe')
+        binkd_binary_windows_alt = os.path.join('bin', 'BINKDWIN.EXE')
 
         if os.path.exists(binkd_binary_linux):
             self.logger.info(f"Found binkd binary: {binkd_binary_linux}")
         elif os.path.exists(binkd_binary_windows):
             self.logger.info(f"Found binkd binary: {binkd_binary_windows}")
+        elif os.path.exists(binkd_binary_windows_alt):
+            self.logger.info(f"Found binkd binary: {binkd_binary_windows_alt}")
         else:
-            errors.append(f"Binkd binary not found in bin/ directory (looking for 'binkd' or 'binkd.exe')")
+            errors.append(f"Binkd binary not found in bin/ directory (looking for 'binkd', 'binkd.exe', or 'BINKDWIN.EXE')")
 
         if errors:
             for error in errors:
@@ -129,12 +132,15 @@ class ConfigValidator:
         # Binkd binary
         binkd_binary_linux = os.path.join('bin', 'binkd')
         binkd_binary_windows = os.path.join('bin', 'binkd.exe')
+        binkd_binary_windows_alt = os.path.join('bin', 'BINKDWIN.EXE')
 
         if os.path.exists(binkd_binary_linux):
             passed.append(f"✓ Binkd binary found: {binkd_binary_linux}")
         elif os.path.exists(binkd_binary_windows):
             passed.append(f"✓ Binkd binary found: {binkd_binary_windows}")
+        elif os.path.exists(binkd_binary_windows_alt):
+            passed.append(f"✓ Binkd binary found: {binkd_binary_windows_alt}")
         else:
-            failed.append("✗ Binkd binary not found (looking for bin/binkd or bin/binkd.exe)")
+            failed.append("✗ Binkd binary not found (looking for bin/binkd, bin/binkd.exe, or bin/BINKDWIN.EXE)")
 
         return passed, failed
