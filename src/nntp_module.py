@@ -131,8 +131,6 @@ class NNTPModule:
         messages = []
 
         try:
-            self.logger.info(f"Fetching messages from {newsgroup}")
-
             # Select newsgroup
             resp, count, first, last, name = self.connection.group(newsgroup)
 

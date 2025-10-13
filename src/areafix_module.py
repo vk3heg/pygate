@@ -37,7 +37,7 @@ class AreafixModule:
 
     def check_areafix_password(self, message: Dict[str, Any]) -> bool:
         """Check if message contains valid areafix password in subject line"""
-        expected_password = self.config.get('FidoNet', 'areafix_password')
+        expected_password = self.config.get('Areafix', 'areafix_password')
         if not expected_password:
             return False
 

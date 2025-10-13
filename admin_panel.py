@@ -113,17 +113,17 @@ class AdminPanel:
 
     def show_error(self, message: str):
         """Display error message"""
-        print(f"\n❌ Error: {message}")
+        print(f"\n Error: {message}")
         self.pause()
 
     def show_success(self, message: str):
         """Display success message"""
-        print(f"\n✅ {message}")
+        print(f"\n {message}")
         self.pause()
 
     def show_info(self, message: str):
         """Display info message"""
-        print(f"\nℹ️  {message}")
+        print(f"\n  {message}")
 
     def run_filter_manager(self):
         """Launch the filter manager"""
@@ -286,7 +286,7 @@ class AdminPanel:
         print(f"=== Log Viewer: {self.current_logfile} ===")
         print(f"Lines {start_line + 1}-{end_line} of {len(lines)} | Terminal: {cols}x{terminal_lines} | Page size: {page_size}")
         if search_term:
-            print(f"🔍 Active search: '{search_term}' (N/Enter to find next, C to clear)")
+            print(f" Active search: '{search_term}' (N/Enter to find next, C to clear)")
         print("=" * cols)
 
         for i in range(start_line, end_line):
@@ -431,31 +431,31 @@ class AdminPanel:
 
         # Check if gateway is running (simple check for now)
         if os.path.exists('pygate.py'):
-            print("✅ PyGate executable found")
+            print(" PyGate executable found")
         else:
-            print("❌ PyGate executable not found")
+            print(" PyGate executable not found")
 
         # Check configuration file
         if os.path.exists('pygate.cfg'):
-            print("✅ Configuration file found")
+            print(" Configuration file found")
         else:
-            print("❌ Configuration file not found")
+            print(" Configuration file not found")
 
         # Check filter configuration
         if os.path.exists('filter.cfg'):
-            print("✅ Filter configuration found")
+            print(" Filter configuration found")
         elif os.path.exists('config/filter.cfg'):
-            print("✅ Filter configuration found (config/filter.cfg)")
+            print(" Filter configuration found (config/filter.cfg)")
         else:
-            print("ℹ️  Filter configuration not found (optional)")
+            print("  Filter configuration not found (optional)")
 
         # Check directories
         required_dirs = ['data/inbound', 'data/outbound', 'data/logs', 'data/temp']
         for dir_name in required_dirs:
             if os.path.exists(dir_name):
-                print(f"✅ {dir_name}/ directory exists")
+                print(f" {dir_name}/ directory exists")
             else:
-                print(f"❌ {dir_name}/ directory missing")
+                print(f" {dir_name}/ directory missing")
 
         # System Information
         print()
@@ -559,13 +559,13 @@ class AdminPanel:
                     from src.nntp_module import NNTPModule
                     nntp = NNTPModule(self.config, logger)
                     if nntp.test_connection():
-                        print("✅ NNTP connection test passed")
+                        print(" NNTP connection test passed")
                     else:
-                        print("❌ NNTP connection test failed")
+                        print(" NNTP connection test failed")
                 except Exception as e:
-                    print(f"❌ NNTP connection test error: {e}")
+                    print(f" NNTP connection test error: {e}")
             else:
-                print("❌ Configuration check failed")
+                print(" Configuration check failed")
 
         except Exception as e:
             self.show_error(f"Error running configuration check: {e}")
@@ -587,7 +587,7 @@ class AdminPanel:
 
             # Show statistics
             stats = self.hold_module.get_hold_statistics()
-            print(f"📊 Statistics: {stats['pending']} pending, {stats['approved']} approved, {stats['rejected']} rejected")
+            print(f"Statistics: {stats['pending']} pending, {stats['approved']} approved, {stats['rejected']} rejected")
             print()
 
             print("1. View Held Messages")
@@ -961,14 +961,14 @@ class AdminPanel:
                         for line in f:
                             if ':' in line.strip() and not line.strip().startswith('#'):
                                 entries_count += 1
-                    print(f"📄 Current newsrc file: {newsrc_file}")
-                    print(f"📊 Newsgroup entries: {entries_count}")
+                    print(f"Current newsrc file: {newsrc_file}")
+                    print(f"Newsgroup entries: {entries_count}")
                     print()
                 except Exception as e:
-                    print(f"❌ Error reading newsrc file: {e}")
+                    print(f"Error reading newsrc file: {e}")
                     print()
             else:
-                print(f"❌ Newsrc file not found: {newsrc_file}")
+                print(f"Newsrc file not found: {newsrc_file}")
                 print()
 
             print("1. Sort newsrc file alphabetically")
@@ -1018,7 +1018,7 @@ class AdminPanel:
             # Create backup first
             backup_file = f"{newsrc_file}.bak"
             shutil.copy2(newsrc_file, backup_file)
-            print(f"✅ Backup created: {backup_file}")
+            print(f"Backup created: {backup_file}")
 
             # Read and sort the file
             entries = []
@@ -1049,9 +1049,9 @@ class AdminPanel:
                 for entry in entries:
                     f.write(entry + '\n')
 
-            print(f"✅ Successfully sorted {len(entries)} newsgroup entries")
-            print(f"📄 Sorted file: {newsrc_file}")
-            print(f"💾 Backup saved: {backup_file}")
+            print(f" Successfully sorted {len(entries)} newsgroup entries")
+            print(f" Sorted file: {newsrc_file}")
+            print(f" Backup saved: {backup_file}")
 
         except Exception as e:
             self.show_error(f"Failed to sort newsrc file: {e}")
@@ -1079,7 +1079,7 @@ class AdminPanel:
                 print("View Newsrc File")
                 print("=" * 50)
                 print()
-                print("📄 File is empty")
+                print(" File is empty")
                 self.pause()
                 return
 
@@ -1106,10 +1106,10 @@ class AdminPanel:
                 end_line = min(start_line + lines_per_page, len(lines))
 
                 # Show page info
-                print(f"📄 Contents of {newsrc_file}")
-                print(f"📄 Page {current_page + 1} of {total_pages} (Lines {start_line + 1}-{end_line} of {len(lines)})")
+                print(f" Contents of {newsrc_file}")
+                print(f" Page {current_page + 1} of {total_pages} (Lines {start_line + 1}-{end_line} of {len(lines)})")
                 if current_search_term:
-                    print(f"🔍 Searching for: '{current_search_term}' (> marks matches)")
+                    print(f" Searching for: '{current_search_term}' (> marks matches)")
                 print("-" * 70)
 
                 # Display lines for current page
@@ -1249,7 +1249,7 @@ class AdminPanel:
                 print("View Newsgroups File")
                 print("=" * 50)
                 print()
-                print("📄 File is empty")
+                print(" File is empty")
                 self.pause()
                 return
 
@@ -1279,8 +1279,8 @@ class AdminPanel:
                 end_line = min(start_line + lines_per_page, len(lines))
 
                 # Show page info
-                print(f"📄 File: {newsgroups_file}")
-                print(f"📊 Total lines: {len(lines):,} | Page {current_page + 1} of {total_pages} | Lines {start_line + 1}-{end_line}")
+                print(f" File: {newsgroups_file}")
+                print(f" Total lines: {len(lines):,} | Page {current_page + 1} of {total_pages} | Lines {start_line + 1}-{end_line}")
                 if current_search_term and search_matches:
                     print(f"🔍 Searching for: '{current_search_term}' | Match {current_match_index + 1} of {len(search_matches)} (> marks matches)")
                 elif current_search_term:
@@ -1406,10 +1406,10 @@ class AdminPanel:
             shutil.copy2(newsrc_file, backup_file)
 
             file_size = os.path.getsize(backup_file)
-            print(f"✅ Backup created successfully!")
-            print(f"📄 Source: {newsrc_file}")
-            print(f"💾 Backup: {backup_file}")
-            print(f"📊 Size: {file_size} bytes")
+            print(f" Backup created successfully!")
+            print(f" Source: {newsrc_file}")
+            print(f" Backup: {backup_file}")
+            print(f" Size: {file_size} bytes")
 
         except Exception as e:
             self.show_error(f"Failed to create backup: {e}")
@@ -1447,8 +1447,8 @@ class AdminPanel:
                 size = stat.st_size
                 mtime = datetime.fromtimestamp(stat.st_mtime)
                 print(f"{i}. {backup}")
-                print(f"   📅 Modified: {mtime.strftime('%Y-%m-%d %H:%M:%S')}")
-                print(f"   📊 Size: {size} bytes")
+                print(f"    Modified: {mtime.strftime('%Y-%m-%d %H:%M:%S')}")
+                print(f"    Size: {size} bytes")
                 print()
             except Exception:
                 print(f"{i}. {backup} (unable to read stats)")
@@ -1468,8 +1468,8 @@ class AdminPanel:
 
                 # Confirm restoration
                 print()
-                print(f"⚠️  This will replace the current {newsrc_file}")
-                print(f"📄 Source backup: {selected_backup}")
+                print(f" This will replace the current {newsrc_file}")
+                print(f" Source backup: {selected_backup}")
                 confirm = self.get_input("Are you sure? (y/N): ").lower()
 
                 if confirm == 'y':
@@ -1477,13 +1477,13 @@ class AdminPanel:
                     current_backup = f"{newsrc_file}.before_restore"
                     if os.path.exists(newsrc_file):
                         shutil.copy2(newsrc_file, current_backup)
-                        print(f"💾 Current file backed up to: {current_backup}")
+                        print(f" Current file backed up to: {current_backup}")
 
                     # Restore from backup
                     shutil.copy2(selected_backup, newsrc_file)
-                    print(f"✅ Successfully restored {newsrc_file} from backup")
+                    print(f" Successfully restored {newsrc_file} from backup")
                 else:
-                    print("❌ Restore cancelled")
+                    print(" Restore cancelled")
             else:
                 self.show_error("Invalid backup selection")
         except ValueError:
@@ -1569,7 +1569,7 @@ class AdminPanel:
         confirm = self.get_input("Add this entry? (y/N): ").lower()
 
         if confirm != 'y':
-            print("❌ Entry not added")
+            print(" Entry not added")
             self.pause()
             return
 
@@ -1578,7 +1578,7 @@ class AdminPanel:
             if os.path.exists(newsrc_file):
                 backup_file = f"{newsrc_file}.bak"
                 shutil.copy2(newsrc_file, backup_file)
-                print(f"✅ Backup created: {backup_file}")
+                print(f" Backup created: {backup_file}")
 
             # Read existing entries
             entries = []
@@ -1613,9 +1613,9 @@ class AdminPanel:
                 for entry in entries:
                     f.write(entry + '\n')
 
-            print(f"✅ Successfully added newsgroup '{newsgroup}' to newsrc file")
-            print(f"📄 Updated file: {newsrc_file}")
-            print(f"📊 Total entries: {len(entries)}")
+            print(f" Successfully added newsgroup '{newsgroup}' to newsrc file")
+            print(f" Updated file: {newsrc_file}")
+            print(f" Total entries: {len(entries)}")
 
             # Check if running in client-only mode
             client_mode = self.config.getboolean('Gateway', 'client_mode', fallback=False)
@@ -1623,8 +1623,8 @@ class AdminPanel:
             if client_mode:
                 # Client mode: only update newsrc, skip server modification
                 print()
-                print("ℹ️  Running in client mode - newsrc updated, server not modified")
-                print(f"✅ Newsgroup '{newsgroup}' added to newsrc")
+                print("  Running in client mode - newsrc updated, server not modified")
+                print(f" Newsgroup '{newsgroup}' added to newsrc")
             else:
                 # Add to NNTP server using ctlinnd
                 print()
@@ -1632,14 +1632,14 @@ class AdminPanel:
                 ctlinnd_success, ctlinnd_output = self.execute_ctlinnd('newgroup', newsgroup)
 
                 if ctlinnd_success:
-                    print(f"✅ Successfully added newsgroup '{newsgroup}' to NNTP server")
+                    print(f" Successfully added newsgroup '{newsgroup}' to NNTP server")
                     if ctlinnd_output.strip():
-                        print(f"📝 Server response: {ctlinnd_output.strip()}")
+                        print(f" Server response: {ctlinnd_output.strip()}")
                 else:
-                    print(f"❌ Failed to add newsgroup '{newsgroup}' to NNTP server")
-                    print(f"📝 Error: {ctlinnd_output}")
+                    print(f" Failed to add newsgroup '{newsgroup}' to NNTP server")
+                    print(f" Error: {ctlinnd_output}")
                     print()
-                    print("⚠️  The newsgroup has been added to newsrc but not to the NNTP server.")
+                    print("  The newsgroup has been added to newsrc but not to the NNTP server.")
                     print("You may need to manually run ctlinnd or check your configuration.")
 
                     # Ask if user wants to remove from newsrc due to ctlinnd failure
@@ -1649,7 +1649,7 @@ class AdminPanel:
                             # Restore from backup
                             if os.path.exists(backup_file):
                                 shutil.copy2(backup_file, newsrc_file)
-                                print(f"✅ Rolled back newsrc file from backup")
+                                print(f" Rolled back newsrc file from backup")
                             else:
                                 # Manual removal
                                 entries.remove(new_entry)
@@ -1660,9 +1660,9 @@ class AdminPanel:
                                         f.write('\n')
                                     for entry in entries:
                                         f.write(entry + '\n')
-                                print(f"✅ Removed '{newsgroup}' from newsrc file")
+                                print(f" Removed '{newsgroup}' from newsrc file")
                         except Exception as rollback_error:
-                            print(f"❌ Failed to rollback: {rollback_error}")
+                            print(f" Failed to rollback: {rollback_error}")
 
         except Exception as e:
             self.show_error(f"Failed to add newsgroup entry: {e}")
@@ -1775,18 +1775,18 @@ class AdminPanel:
             print(f"Selected entry to delete:")
             print(f"  {selected_entry}")
             print()
-            print(f"⚠️  This will permanently remove '{newsgroup_name}' from the newsrc file")
+            print(f"  This will permanently remove '{newsgroup_name}' from the newsrc file")
             confirm = self.get_input("Are you sure? (y/N): ").lower()
 
             if confirm != 'y':
-                print("❌ Deletion cancelled")
+                print(" Deletion cancelled")
                 self.pause()
                 return
 
             # Create backup first
             backup_file = f"{newsrc_file}.bak"
             shutil.copy2(newsrc_file, backup_file)
-            print(f"✅ Backup created: {backup_file}")
+            print(f" Backup created: {backup_file}")
 
             # Remove the selected entry
             entries.pop(selected_index)
@@ -1800,9 +1800,9 @@ class AdminPanel:
                 for entry in entries:
                     f.write(entry + '\n')
 
-            print(f"✅ Successfully deleted newsgroup '{newsgroup_name}' from newsrc file")
-            print(f"📄 Updated file: {newsrc_file}")
-            print(f"📊 Remaining entries: {len(entries)}")
+            print(f" Successfully deleted newsgroup '{newsgroup_name}' from newsrc file")
+            print(f" Updated file: {newsrc_file}")
+            print(f" Remaining entries: {len(entries)}")
 
             # Check if running in client-only mode
             client_mode = self.config.getboolean('Gateway', 'client_mode', fallback=False)
@@ -1810,8 +1810,8 @@ class AdminPanel:
             if client_mode:
                 # Client mode: only update newsrc, skip server modification
                 print()
-                print("ℹ️  Running in client mode - newsrc updated, server not modified")
-                print(f"✅ Newsgroup '{newsgroup_name}' removed from newsrc")
+                print("  Running in client mode - newsrc updated, server not modified")
+                print(f" Newsgroup '{newsgroup_name}' removed from newsrc")
             else:
                 # Remove from NNTP server using ctlinnd
                 print()
@@ -1819,14 +1819,14 @@ class AdminPanel:
                 ctlinnd_success, ctlinnd_output = self.execute_ctlinnd('rmgroup', newsgroup_name)
 
                 if ctlinnd_success:
-                    print(f"✅ Successfully removed newsgroup '{newsgroup_name}' from NNTP server")
+                    print(f" Successfully removed newsgroup '{newsgroup_name}' from NNTP server")
                     if ctlinnd_output.strip():
-                        print(f"📝 Server response: {ctlinnd_output.strip()}")
+                        print(f" Server response: {ctlinnd_output.strip()}")
                 else:
-                    print(f"❌ Failed to remove newsgroup '{newsgroup_name}' from NNTP server")
-                    print(f"📝 Error: {ctlinnd_output}")
+                    print(f" Failed to remove newsgroup '{newsgroup_name}' from NNTP server")
+                    print(f" Error: {ctlinnd_output}")
                     print()
-                print("⚠️  The newsgroup has been removed from newsrc but not from the NNTP server.")
+                print("  The newsgroup has been removed from newsrc but not from the NNTP server.")
                 print("You may need to manually run ctlinnd or check your configuration.")
 
                 # Ask if user wants to restore to newsrc due to ctlinnd failure
@@ -1836,7 +1836,7 @@ class AdminPanel:
                         # Restore from backup
                         if os.path.exists(backup_file):
                             shutil.copy2(backup_file, newsrc_file)
-                            print(f"✅ Restored newsrc file from backup")
+                            print(f" Restored newsrc file from backup")
                         else:
                             # Manual re-addition
                             entries.insert(selected_index, selected_entry)
@@ -1848,9 +1848,9 @@ class AdminPanel:
                                     f.write('\n')
                                 for entry in entries:
                                     f.write(entry + '\n')
-                            print(f"✅ Restored '{newsgroup_name}' to newsrc file")
+                            print(f" Restored '{newsgroup_name}' to newsrc file")
                     except Exception as restore_error:
-                        print(f"❌ Failed to restore: {restore_error}")
+                        print(f" Failed to restore: {restore_error}")
 
         except Exception as e:
             self.show_error(f"Failed to delete newsgroup entry: {e}")

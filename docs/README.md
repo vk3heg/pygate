@@ -16,6 +16,7 @@ computer.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Log Management](#log-management)
 - [Message Hold System](#message-hold-system)
 - [Spam Filtering](#spam-filtering)
 - [Areafix Wildcard Protection](#areafix-wildcard-protection)
@@ -56,6 +57,7 @@ computer.
   - `uuid`
   - `json`
   - `paramiko` (for SSH/remote ctlinnd on Windows deployments)
+  - `psutil` (for automation script process management)
 
 ## Installation
 
@@ -73,16 +75,30 @@ computer.
    chmod +x bin/*
    ```
 
-3. **Copy the FidoNet mailer**:
+3. **Install Python dependencies** (if needed):
+   ```bash
+   # Linux: Install paramiko and psutil
+   pip3 install paramiko psutil
+
+   # Windows: Install paramiko and psutil
+   # Open Command Prompt or PowerShell as Administrator
+   pip install paramiko psutil
+
+   # If paramiko fails on Windows, install Microsoft C++ Build Tools first:
+   # Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+   # Then retry: pip install paramiko
+   ```
+
+4. **Copy the FidoNet mailer**:
    ```bash
    # For Linux: Copy binkd binary to bin/ directory
    cp /usr/local/bin/binkd bin/
 
    # For Windows: Copy binkd.exe to bin\ directory
-   copy C:\binkd\binkd.exe bin\
+   copy C:\binkd\binkdwin.exe bin\
    ```
 
-4. **Directory structure is already organized**:
+5. **Directory structure is already organized**:
    ```bash
    # Directories are pre-organized:
    # config/     - Configuration files
@@ -92,7 +108,7 @@ computer.
    # cache/      - Cache files
    ```
 
-5. **Configure your system** (see Configuration section)
+6. **Configure your system** (see Configuration section)
 
 ## Configuration
 
@@ -143,6 +159,10 @@ areas_file = config/newsrc
 log_file = data/logs/pygate.log
 log_level = INFO
 
+# Log retention (days to keep compressed log files)
+# Default: 30 days
+log_retention_days = 30
+
 [SpamFilter]
 # Spam filtering settings
 enabled = true
@@ -152,7 +172,7 @@ initialfetch = 200
 
 [Arearemap]
 # Area mappings: FIDO_AREA = newsgroup.name
-MYSTIC = alt.bbs.mystic
+AMIGA-DEMOS = comp.sys.amiga.demos
 LINUX = comp.os.linux.misc
 PYTHON = comp.lang.python
 
@@ -192,13 +212,12 @@ client_mode = true
 
 **When to use client-only mode:**
 - Connecting to a remote news server you don't administer
-- Running PyGate on a different machine than the NNTP server
 - Using a commercial or third-party news provider
 - Testing PyGate without affecting server configuration
 - Security-restricted environments where ctlinnd access is unavailable
 
-**Note:** In client-only mode, areafix operations will still update your local newsrc file, but you must ensure the corresponding
- newsgroups exist on the NNTP server before subscribing to them.
+**Note:** In client-only mode, areafix operations will still update your local newsrc file, but you must ensure the
+  corresponding newsgroups exist on the NNTP server before subscribing to them.
 
 ### Areas Configuration: `config/newsrc`
 
@@ -277,40 +296,36 @@ PyGate supports several operation modes:
 
 ### Automated Operation
 
-PyGate includes enhanced automation scripts (`bin/gate.sh` for Linux, `bin/gate.bat` for Windows) that provide robust error handling, logging, and maintenance features.
+PyGate includes a cross-platform automation script (`bin/gate.py`) that provides robust error handling, logging, and
+maintenance features.
 
-#### Using gate.sh / gate.bat (Recommended)
+#### Using gate.py (Recommended)
 
-The automation scripts provide a complete automated workflow:
+The automation script provides a complete automated workflow for both Linux and Windows:
 
 ```bash
-# Linux: Run the automation script manually
-./bin/gate.sh
+# Run the automation script manually
+./bin/gate.py          # Linux/Unix
+python bin\gate.py     # Windows
 
-# Windows: Run the automation script manually
-bin\gate.bat
+# Enable debug mode for troubleshooting
+./bin/gate.py --debug          # Linux/Unix
+python bin\gate.py --debug     # Windows
 
-# Linux: Enable debug mode for troubleshooting
-./bin/gate.sh --debug
-
-# Windows: Enable debug mode for troubleshooting
-bin\gate.bat --debug
-
-# Linux: View help
-./bin/gate.sh --help
-
-# Windows: View help
-bin\gate.bat --help
+# Perform a dry run (test without executing commands)
+./bin/gate.py --dry-run        # Linux/Unix
+python bin\gate.py --dry-run   # Windows
 ```
 
-**Features of gate.sh / gate.bat:**
+**Features of gate.py:**
 - **Lock file management**: Prevents overlapping executions
 - **Timeout handling**: Prevents runaway processes
 - **Pre-flight checks**: Validates configuration and directories
 - **Integrated workflow**: Import → Export → Process held → Pack → Binkd connection → Areafix
 - **Statistics tracking**: Logs packet counts to `data/logs/gate_stats.log`
 - **Disk space monitoring**: Warns when space is low
-- **Log rotation**: Automatically rotates large log files
+- **Log rotation**: Automatically rotates large log files with gzip compression
+- **Log cleanup**: Removes old compressed logs based on retention period (configurable via `log_retention_days`)
 - **Maintenance scheduling**: Runs maintenance tasks at 2 AM
 - **Error recovery**: Continues operation even if individual steps fail
 
@@ -318,19 +333,21 @@ bin\gate.bat --help
 
 Linux (cron):
 ```bash
-# Every 30 minutes - full PyGate cycle with gate.sh
-*/30 * * * * /opt/pygate/bin/gate.sh
+# Every 30 minutes - full PyGate cycle with gate.py
+*/30 * * * * /opt/pygate/bin/gate.py
 
 # Or every 15 minutes for higher frequency
-*/15 * * * * /opt/pygate/bin/gate.sh
+*/15 * * * * /opt/pygate/bin/gate.py
 ```
 
 Windows (Task Scheduler):
-- Create a new task that runs `C:\pygate\bin\gate.bat`
+- Create a new task
+- Program: `C:\Python3\python.exe` (or your Python path)
+- Arguments: `C:\pygate\bin\gate.py`
 - Set to repeat every 30 minutes (or 15 minutes for higher frequency)
 - Run whether user is logged on or not
 
-The automation scripts log to `data/logs/gate.log` and maintain statistics in `data/logs/gate_stats.log`.
+The automation script logs to `data/logs/gate.log` and maintains statistics in `data/logs/gate_stats.log`.
 
 #### Manual Cron Setup (Alternative)
 
@@ -344,6 +361,68 @@ If you prefer manual control, set up individual cron jobs:
 # Daily maintenance
 0 2 * * * cd /opt/pygate && ./pygate.py --maintenance
 ```
+
+### Log Management
+
+PyGate provides automated log management to prevent unbounded log growth:
+
+#### Automatic Log Rotation
+
+When log files exceed 10MB, they are automatically:
+1. **Compressed** using gzip compression
+2. **Timestamped** with format: `logfile.DDMMMYY.gz` (PyGate date format)
+3. **Archived** in the same log directory
+4. **Replaced** with a fresh log file
+
+The following logs are automatically rotated:
+- `pygate.log` - PyGate main operations log
+- `gate.log` - gate.py automation script log
+- `binkd.log` - Binkd mailer log
+
+Example rotated logs:
+```
+data/logs/pygate.log.12Oct25.gz
+data/logs/gate.log.12Oct25.gz
+data/logs/binkd.log.12Oct25.gz
+```
+
+#### Automatic Log Cleanup
+
+During the 2 AM maintenance cycle, old compressed logs are automatically removed based on the configured retention period.
+
+**Configuration:**
+
+In `pygate.cfg`:
+```ini
+[Files]
+# Log retention (days to keep compressed log files)
+# Default: 30 days
+log_retention_days = 30
+```
+
+**Examples:**
+
+```ini
+# Keep logs for 15 days (saves disk space)
+log_retention_days = 15
+
+# Keep logs for 90 days (compliance requirements)
+log_retention_days = 90
+
+# Keep logs for 7 days (minimal retention)
+log_retention_days = 7
+```
+
+**What gets cleaned:**
+- Compressed log files (`.log.*.gz`) older than retention period
+- Cleanup runs during the 2 AM maintenance window
+- Active log files are never deleted, only rotated when they exceed 10MB
+
+**Benefits:**
+- **Automatic**: No manual intervention required
+- **Configurable**: Adjust retention to your needs
+- **Space efficient**: gzip compression typically achieves 90%+ compression
+- **Safe**: Only removes compressed archives, never active logs
 
 ## Message Hold System
 
@@ -825,11 +904,16 @@ Monitor operations via log files:
 # Real-time monitoring of PyGate operations
 tail -f data/logs/pygate.log
 
-# Monitor gate.sh automation script
+# Monitor gate.py automation script
 tail -f data/logs/gate.log
 
-# View statistics from gate.sh
+# View statistics from gate.py
 tail -f data/logs/gate_stats.log
+
+# View compressed archived logs
+zcat data/logs/pygate.log.12Oct25.gz | less
+zgrep -i error data/logs/pygate.log.*.gz
+zgrep -i error data/logs/binkd.log.*.gz
 
 # Error analysis
 grep -i error data/logs/pygate.log
@@ -841,7 +925,7 @@ grep -i filter data/logs/pygate.log
 # Message counts
 grep -i "exported\|gated\|filtered" data/logs/pygate.log
 
-# Check gate.sh execution history
+# Check gate.py execution history
 grep "PyGate cycle completed" data/logs/gate.log
 ```
 
@@ -885,53 +969,53 @@ rm data/hold/approved/*.json
 
 ```
 pygate/
-├── pygate.py              # Main gateway script
-├── admin_panel.py         # Command-line admin interface
-├── README.md              # This documentation
-├── src/                   # Python modules
-│   ├── gateway.py         # Core gateway module
-│   ├── config_validator.py # Configuration validation module
-│   ├── nntp_module.py     # NNTP handling
-│   ├── fidonet_module.py  # FidoNet packet processing
-│   ├── hold_module.py     # Message hold system
-│   ├── spam_filter.py     # Spam filtering
-│   ├── areafix_module.py  # Areafix processing
-│   ├── filter_manager.py  # Filter management
-│   └── nntp_client.py     # NNTP client module
-├── config/                # Configuration files
-│   ├── pygate.cfg         # Main configuration
-│   ├── newsrc             # Areas configuration
-│   ├── filter.cfg         # Spam filter patterns
-│   ├── binkd.config       # Binkd mailer configuration
-│   ├── newsgroups         # Newsgroups list
-│   └── areafix.hlp        # Areafix help file
-├── bin/                   # Binaries and scripts
-│   ├── binkd              # Binkd mailer binary (Linux)
-│   ├── binkd.exe          # Binkd mailer binary (Windows)
-│   ├── gate.sh            # Automated PyGate execution script (Linux)
-│   └── gate.bat           # Automated PyGate execution script (Windows)
-├── data/                  # Runtime data
-│   ├── logs/              # Log files
-│   │   ├── pygate.log     # PyGate operation logs
-│   │   ├── gate.log       # gate.sh automation logs
-│   │   └── gate_stats.log # Statistics from gate.sh
-│   ├── inbound/           # Incoming FidoNet packets
-│   │   ├── processed/     # Processed packets
-│   │   └── bad/           # Failed packets
-│   ├── outbound/          # Outgoing FidoNet packets
-│   ├── in/                # Binkd incoming temp
-│   ├── out/               # Binkd outgoing temp
-│   ├── temp/              # Temporary files
-│   ├── secure/            # Secure directory
-│   └── hold/              # Message hold system
-│       ├── pending/       # Messages awaiting review
-│       ├── approved/      # Approved messages
-│       ├── rejected/      # Rejected messages
-│       ├── backup/        # Backup of held messages after releasing
-│       └── notifications.json # Notification tracking
-├── cache/                 # Cache files
-│   └── __pycache__/       # Python bytecode cache
-└── docs/                  # Documentation (future use)
+├── pygate.py                   # Main gateway script
+├── pygate.cfg                  # Main configuration
+├── admin_panel.py              # Command-line admin interface
+├── src/                        # Python modules
+│   ├── cache/                  # Cache files
+│   │   └── __pycache__/        # Python bytecode cache
+│   ├── gateway.py              # Core gateway module
+│   ├── config_validator.py     # Configuration validation module
+│   ├── nntp_module.py          # NNTP handling
+│   ├── fidonet_module.py       # FidoNet packet processing
+│   ├── hold_module.py          # Message hold system
+│   ├── spam_filter.py          # Spam filtering
+│   ├── areafix_module.py       # Areafix processing
+│   ├── filter_manager.py       # Filter management
+│   └── nntp_client.py          # NNTP client module
+├── config/                     # Configuration files
+│   ├── newsrc                  # Areas configuration
+│   ├── filter.cfg              # Spam filter patterns
+│   ├── binkd.config            # Binkd mailer configuration
+│   ├── newsgroups              # Newsgroups list
+│   └── areafix.hlp             # Areafix help file
+├── bin/                        # Binaries and scripts
+│   ├── binkd                   # Binkd mailer binary (Linux)
+│   ├── binkdwin.exe            # Binkd mailer binary (Windows)
+│   └── gate.py                 # Automated PyGate execution script (cross-platform)
+├── data/                       # Runtime data
+│   ├── logs/                   # Log files
+│   │   ├── pygate.log          # PyGate operation logs
+│   │   ├── gate.log            # gate.py automation logs
+│   │   ├── binkd.log           # Binkd mailer logs
+│   │   └── gate_stats.log      # Statistics from gate.py
+│   ├── inbound/                # Incoming FidoNet packets
+│   │   ├── processed/          # Processed packets
+│   │   └── bad/                # Failed packets
+│   ├── outbound/               # Outgoing FidoNet packets
+│   ├── in/                     # Binkd incoming temp
+│   ├── out/                    # Binkd outgoing temp
+│   ├── temp/                   # Temporary files
+│   ├── secure/                 # Secure directory
+│   └── hold/                   # Message hold system
+│       ├── pending/            # Messages awaiting review
+│       ├── approved/           # Approved messages
+│       ├── rejected/           # Rejected messages
+│       ├── backup/             # Backup of held messages after releasing
+│       └── notifications.json  # Notification tracking
+└── docs/                       # Documentation
+    └── README.md               # This file your reading now
 ```
 
 ## Examples
@@ -954,16 +1038,16 @@ echo "alt.bbs.mystic: 0-0" >> config/newsrc
 ./pygate.py --export
 
 # OR use the automation script (recommended)
-./bin/gate.sh          # Linux
-bin\gate.bat           # Windows
+./bin/gate.py               # Linux
+python bin\gate.py          # Windows
 
 # 5. Set up automated operation
 # Linux (cron):
 crontab -e
-# Add: */30 * * * * /opt/pygate/bin/gate.sh
+# Add: */30 * * * * /opt/pygate/bin/gate.py
 
 # Windows (Task Scheduler):
-# Create task to run C:\pygate\bin\gate.bat every 30 minutes
+# Create task to run: python C:\pygate\bin\gate.py every 30 minutes
 ```
 
 ### Example 2: Adding New Areas
@@ -1087,12 +1171,12 @@ python3 admin_panel.py
 ./pygate.py --process-held
 ```
 
-### Example 6: Monitoring with Automation Scripts
+### Example 6: Monitoring with Automation Script
 
 ```bash
 # 1. Run automation script manually with debug mode
-./bin/gate.sh --debug    # Linux
-bin\gate.bat --debug     # Windows
+./bin/gate.py --debug        # Linux
+python bin\gate.py --debug   # Windows
 
 # 2. Monitor automation logs in real-time
 tail -f data/logs/gate.log
@@ -1106,8 +1190,8 @@ grep "PyGate cycle completed" data/logs/gate.log | tail -10
 # 5. Check for errors in automation
 grep -i "error\|warning\|failed" data/logs/gate.log
 
-# 6. Verify cron is running
-grep "gate.sh" /var/log/syslog  # or check your system's cron log
+# 6. Verify cron is running (Linux)
+grep "gate.py" /var/log/syslog  # or check your system's cron log
 ```
 
 ---

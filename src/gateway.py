@@ -310,8 +310,6 @@ class Gateway:
                 if not newsgroup:
                     continue
 
-                self.logger.info(f"Processing area {newsgroup}")
-
                 try:
                     # Fetch messages from NNTP
                     messages = self.nntp.fetch_messages(newsgroup, area_config)
