@@ -145,6 +145,8 @@ class Gateway:
                 return True  # Not an error if no inbound
 
             packets_processed = 0
+            # Track newsgroups that had messages posted (to update newsrc)
+            newsgroups_posted = set()
 
             # Process all .pkt files in inbound
             for packet_file in Path(inbound_dir).glob("*.pkt"):
@@ -190,6 +192,10 @@ class Gateway:
                                     success = self.nntp.post_message(nntp_message)
                                     if success:
                                         area_stats[area]['gated'] += 1
+                                        # Track the newsgroup for newsrc update
+                                        newsgroup = area_config.get('newsgroup')
+                                        if newsgroup:
+                                            newsgroups_posted.add(newsgroup)
                                     else:
                                         area_stats[area]['failed'] += 1
                             else:
@@ -216,6 +222,35 @@ class Gateway:
                     bad_dir = Path(inbound_dir) / "bad"
                     bad_dir.mkdir(exist_ok=True)
                     packet_file.rename(bad_dir / packet_file.name)
+
+            # Update newsrc file to prevent re-fetching posted messages
+            if newsgroups_posted:
+                self.logger.info(f"Updating newsrc for {len(newsgroups_posted)} newsgroup(s) after import")
+                areas = self.load_areas_config()
+
+                # Update each newsgroup's last article number
+                for newsgroup in newsgroups_posted:
+                    # Find the area tag for this newsgroup
+                    area_tag = None
+                    for tag, area_config in areas.items():
+                        if area_config.get('newsgroup') == newsgroup:
+                            area_tag = tag
+                            break
+
+                    if area_tag:
+                        # Get current highest article number from the NNTP server
+                        current_last = self.nntp.get_current_last_article(newsgroup)
+                        if current_last is not None and current_last > 0:
+                            old_last = areas[area_tag].get('last_article', 0)
+                            areas[area_tag]['last_article'] = current_last
+                            areas[area_tag]['high_message'] = current_last
+                            self.logger.info(f"Updated {area_tag} ({newsgroup}): {old_last} -> {current_last}")
+
+                # Save updated areas configuration
+                if self.save_areas_config(areas):
+                    self.logger.info("Newsrc updated successfully after import")
+                else:
+                    self.logger.warning("Failed to update newsrc after import")
 
             self.logger.info(f"Import complete: {packets_processed} packets processed")
             return True
@@ -466,6 +501,8 @@ class Gateway:
 
             messages_posted = 0
             messages_failed = 0
+            # Track newsgroups that had messages posted (to update newsrc)
+            newsgroups_posted = set()
 
             for approved_record in approved_messages:
                 try:
@@ -491,6 +528,10 @@ class Gateway:
                     success = self.nntp.post_message(original_message)
                     if success:
                         messages_posted += 1
+                        # Track the newsgroup for newsrc update
+                        newsgroup = self.nntp.get_newsgroup_for_area(approved_record['area_tag'])
+                        if newsgroup:
+                            newsgroups_posted.add(newsgroup)
                         self.logger.info(f"Posted approved message {approved_record['hold_id']} to NNTP")
                     else:
                         messages_failed += 1
@@ -499,6 +540,35 @@ class Gateway:
                 except Exception as e:
                     self.logger.error(f"Error processing approved NNTP message {approved_record.get('hold_id', 'unknown')}: {e}")
                     messages_failed += 1
+
+            # Update newsrc file to prevent re-fetching posted messages
+            if messages_posted > 0 and newsgroups_posted:
+                self.logger.info(f"Updating newsrc for {len(newsgroups_posted)} newsgroup(s) after posting")
+                areas = self.load_areas_config()
+
+                # Update each newsgroup's last article number
+                for newsgroup in newsgroups_posted:
+                    # Find the area tag for this newsgroup
+                    area_tag = None
+                    for tag, area_config in areas.items():
+                        if area_config.get('newsgroup') == newsgroup:
+                            area_tag = tag
+                            break
+
+                    if area_tag:
+                        # Get current highest article number from the NNTP server
+                        current_last = self.nntp.get_current_last_article(newsgroup)
+                        if current_last is not None and current_last > 0:
+                            old_last = areas[area_tag].get('last_article', 0)
+                            areas[area_tag]['last_article'] = current_last
+                            areas[area_tag]['high_message'] = current_last
+                            self.logger.info(f"Updated {area_tag} ({newsgroup}): {old_last} -> {current_last}")
+
+                # Save updated areas configuration
+                if self.save_areas_config(areas):
+                    self.logger.info("Newsrc updated successfully after posting")
+                else:
+                    self.logger.warning("Failed to update newsrc after posting")
 
             if messages_failed > 0:
                 self.logger.warning(f"{messages_failed} approved NNTP messages failed to post")

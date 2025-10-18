@@ -123,6 +123,19 @@ class NNTPModule:
             self.logger.error(f"Error posting message: {e}")
             return False
 
+    def get_current_last_article(self, newsgroup: str) -> Optional[int]:
+        """Get the current highest article number for a newsgroup"""
+        if not self.connection and not self.connect():
+            return None
+
+        try:
+            # Select newsgroup to get current stats
+            resp, count, first, last, name = self.connection.group(newsgroup)
+            return int(last)
+        except Exception as e:
+            self.logger.error(f"Error getting last article for {newsgroup}: {e}")
+            return None
+
     def fetch_messages(self, newsgroup: str, area_config: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Fetch messages from newsgroup"""
         if not self.connection and not self.connect():

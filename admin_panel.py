@@ -700,7 +700,8 @@ class AdminPanel:
         print()
 
         full_message = message.get('full_message', {})
-        body = full_message.get('body', 'No body available')
+        # Try 'body' first (NNTP messages), then 'text' (FidoNet messages)
+        body = full_message.get('body') or full_message.get('text') or 'No body available'
 
         # Split into lines and display with paging
         lines = body.split('\n')
