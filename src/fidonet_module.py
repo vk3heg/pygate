@@ -109,8 +109,9 @@ class FidoNetModule:
                             else:
                                 # It was just an empty line, seek back and continue
                                 f.seek(pos)
-                                self.logger.debug("Empty line, continuing...")
-                                # Don't add empty lines to body, just continue
+                                self.logger.debug("Empty line in message body, preserving it")
+                                # Preserve empty lines in message body for proper formatting
+                                body_lines.append('')
                                 continue
 
                         self.logger.debug(f"Read line: {repr(line)}")

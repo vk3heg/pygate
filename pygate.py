@@ -11,6 +11,7 @@ import os
 import argparse
 import signal
 import time
+import configparser
 from pathlib import Path
 
 # Add pygate directory to path
@@ -19,7 +20,18 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.gateway import Gateway
 from src.config_validator import ConfigValidator
 
-__version__ = "1.0"
+
+def get_version(config_file='pygate.cfg'):
+    """Read version from configuration file"""
+    try:
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        return config.get('Gateway', 'version', fallback='1.0')
+    except:
+        return '1.0'
+
+
+__version__ = get_version()
 
 
 def signal_handler(signum, frame):

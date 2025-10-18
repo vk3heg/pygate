@@ -524,8 +524,16 @@ class Gateway:
 
                     # This message is meant for NNTP posting (came from FidoNet)
                     # Restore area information from hold record
-                    original_message['area'] = approved_record['area_tag']
-                    success = self.nntp.post_message(original_message)
+                    area_tag = approved_record['area_tag']
+                    original_message['area'] = area_tag
+
+                    # Get area configuration for conversion
+                    areas = self.load_areas_config()
+                    area_config = areas.get(area_tag, {'newsgroup': area_tag.lower()})
+
+                    # Convert FidoNet message to NNTP format before posting
+                    nntp_message = self.convert_fido_to_nntp(original_message, area_config)
+                    success = self.nntp.post_message(nntp_message)
                     if success:
                         messages_posted += 1
                         # Track the newsgroup for newsrc update
