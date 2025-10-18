@@ -550,7 +550,7 @@ class AdminPanel:
             success = validator.check_configuration()
 
             if success:
-                print("✅ Configuration check passed")
+                print("Configuration check passed")
 
                 # Test NNTP connection
                 print()
