@@ -462,6 +462,7 @@ class FidoNetModule:
                 'from_name': message.get('from_name', 'Unknown'),
                 'to_name': message.get('to_name', 'All'),
                 'subject': message.get('subject', ''),
+                'full_subject': message.get('full_subject'),  # Preserve full subject for long subjects
                 'text': message.get('text', ''),
                 'datetime': message.get('datetime', datetime.now()),
                 'orig_node': self.get_our_node(),
@@ -706,6 +707,12 @@ class FidoNetModule:
             text_lines.append(f"\x01REPLYADDR {message['replyaddr']}")
         if message.get('replyto'):
             text_lines.append(f"\x01REPLYTO {message['replyto']}")
+
+        # If subject was truncated, add full subject line before message body
+        if message.get('full_subject'):
+            self.logger.info(f"Adding full subject to message body: {message['full_subject'][:50]}...")
+            text_lines.append(f"Subject: {message['full_subject']}")
+            text_lines.append('')  # Blank line after subject
 
         # Add message text body
         if message.get('text'):

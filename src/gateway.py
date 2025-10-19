@@ -727,13 +727,19 @@ class Gateway:
         # Parse the date properly
         message_date = self.parse_message_date(nntp_message.get('date', datetime.now()))
 
+        # Get subject and check if it will be truncated (71 chars max in FidoNet)
+        subject = nntp_message.get('subject', '')
+        message_body = nntp_message.get('body', '')
+
         fido_message = {
             'area': area_tag,
             'from_name': nntp_message.get('from_name', 'Unknown'),
             'to_name': area_config.get('default_to', 'All'),
-            'subject': nntp_message.get('subject', ''),
+            'subject': subject,
             'datetime': message_date,
-            'text': nntp_message.get('body', ''),
+            'text': message_body,
+            # Store full subject if it will be truncated (for write_message to handle)
+            'full_subject': subject if len(subject) > 71 else None,
             'origin': f"{self.config.get('FidoNet', 'origin_line')} ({gateway_address})",
             'msgid': self.generate_fido_msgid(nntp_message.get('message_id', '')),
             'reply': self.generate_fido_reply(nntp_message.get('references', '')),

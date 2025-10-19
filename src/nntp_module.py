@@ -425,15 +425,12 @@ class NNTPModule:
             return header_value  # Return original if decoding fails
 
     def decode_and_truncate_subject(self, subject_header: str) -> str:
-        """Decode MIME subject header and truncate to fit FIDONET subject field (72 bytes)"""
+        """Decode MIME subject header (truncation now handled in convert_nntp_to_fido)"""
         try:
             decoded_subject = self.decode_mime_header(subject_header)
-            # Truncate to fit FIDONET subject field (71 chars + 1 null terminator = 72 bytes)
-            if len(decoded_subject) > 71:
-                decoded_subject = decoded_subject[:71]
             return decoded_subject
         except Exception:
-            return subject_header[:71] if len(subject_header) > 71 else subject_header
+            return subject_header
 
     def extract_email_from_header(self, from_header: str) -> str:
         """Extract email address from header"""
