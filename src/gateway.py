@@ -1052,6 +1052,11 @@ class Gateway:
         """Convert FidoNet message to NNTP format"""
         # Get original datetime and apply TZUTC if present
         original_date = fido_message.get('datetime', datetime.now())
+
+        # If datetime is a string (from JSON), parse it to datetime object
+        if isinstance(original_date, str):
+            original_date = datetime.fromisoformat(original_date)
+
         tzutc_str = fido_message.get('tzutc', '')
 
         # Apply TZUTC timezone information per FTS-4008.002
