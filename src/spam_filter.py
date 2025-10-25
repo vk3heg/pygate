@@ -153,7 +153,41 @@ class SpamFilterModule:
                     filter_entry['stats']['blocked'] += 1
                     self.stats['spam_blocked'] += 1
 
-                    self.logger.info(f"Message blocked by {filter_entry['name']}: {message.get('subject', 'No Subject')}")
+                    # Log appropriate information based on filter type
+                    filter_name = filter_entry['name']
+                    if filter_name == "From Filter":
+                        log_info = message.get('from_name', 'Unknown')
+                    elif filter_name == "Organization Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('organization', 'Unknown')
+                    elif filter_name == "User-Agent Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('user-agent', 'Unknown')
+                    elif filter_name == "Path Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('path', 'Unknown')
+                    elif filter_name == "Newsgroups Filter":
+                        log_info = message.get('newsgroup', 'Unknown')
+                    elif filter_name == "Content-Type Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('content-type', 'Unknown')
+                    elif filter_name == "Message-ID Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('message-id', 'Unknown')
+                    elif filter_name == "Injection-Info Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('injection-info', 'Unknown')
+                    elif filter_name == "NNTP-Posting-Host Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('nntp-posting-host', 'Unknown')
+                    elif filter_name == "X-Trace Filter":
+                        headers = message.get('headers', {})
+                        log_info = headers.get('x-trace', 'Unknown')
+                    else:
+                        # Default to subject for Subject Filter and any other filters
+                        log_info = message.get('subject', 'No Subject')
+
+                    self.logger.info(f"Message blocked by {filter_name}: {log_info}")
                     return True
 
             except Exception as e:
