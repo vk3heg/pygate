@@ -221,8 +221,13 @@ class SpamFilterModule:
 
     def newsgroups_filter(self, message: Dict[str, Any]) -> bool:
         """Filter based on Newsgroups header patterns"""
-        newsgroup = message.get('newsgroup', '')
-        return self._check_pattern_match('Newsgroups', newsgroup)
+        # Check the full Newsgroups header from the article (contains all cross-posted groups)
+        headers = message.get('headers', {})
+        newsgroups_header = headers.get('newsgroups', '')
+        # Fallback to single newsgroup field if Newsgroups header not available
+        if not newsgroups_header:
+            newsgroups_header = message.get('newsgroup', '')
+        return self._check_pattern_match('Newsgroups', newsgroups_header)
 
     def content_type_filter(self, message: Dict[str, Any]) -> bool:
         """Filter based on Content-Type header patterns"""
@@ -271,19 +276,14 @@ class SpamFilterModule:
         # Get max crosspost limit from config
         max_crosspost = self.config.getint('SpamFilter', 'maxcrosspost')
 
-        # Check if it's a single newsgroup message (not cross-posted)
-        newsgroup = message.get('newsgroup', '')
-        if newsgroup and ',' not in newsgroup:
-            # Single newsgroup, not a cross-post
-            return False
-
         # Get Newsgroups header for cross-posting analysis
+        # This contains the full list of cross-posted newsgroups from the article
         headers = message.get('headers', {})
         newsgroups_header = headers.get('newsgroups', '')
 
         # If no Newsgroups header, check the newsgroup field for comma-separated list
         if not newsgroups_header:
-            newsgroups_header = newsgroup
+            newsgroups_header = message.get('newsgroup', '')
 
         if not newsgroups_header:
             # No newsgroups information, allow message
