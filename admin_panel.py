@@ -624,8 +624,8 @@ class AdminPanel:
 
         print(f"Found {len(pending_messages)} messages held for review:")
         print()
-        print("ID".ljust(8), "    Area".ljust(12), "    From".ljust(20), "    Subject".ljust(25), "    Direction".ljust(8), " Date")
-        print("-" * 88)
+        print("ID".ljust(8), "    Area".ljust(12), "    From".ljust(20), "    Subject".ljust(25), "    Direction".ljust(8), " Date & Time")
+        print("-" * 105)
 
         for i, msg in enumerate(pending_messages, 1):
             hold_id = msg['hold_id'][:8]
@@ -633,9 +633,10 @@ class AdminPanel:
             from_name = msg['from_name'][:19]
             subject = msg['subject'][:24]
             direction = msg.get('direction', 'unknown')[:7]
-            date = msg['held_at'][:10]  # Just the date part
+            # Show both date and time (first 19 chars: YYYY-MM-DD HH:MM:SS)
+            date_time = msg['date'][:19].replace('T', ' ')
 
-            print(f"{i:2d}. {hold_id} {area.ljust(12)} {from_name.ljust(20)} {subject.ljust(25)} {direction.ljust(8)} {date}")
+            print(f"{i:2d}. {hold_id} {area.ljust(12)} {from_name.ljust(20)} {subject.ljust(25)} {direction.ljust(8)} {date_time}")
 
         print()
         choice = self.get_input("Enter message number to view details, or Enter to go back: ")
