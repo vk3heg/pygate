@@ -1,8 +1,8 @@
 # PyGate - Python FidoNet-NNTP Gateway
 
-PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP newsgroups, allowing seamless message
-exchange between the two networks. PyGate is designed to run on the NNTP news server, but can be run on a different
-computer as a client only.
+PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP newsgroups, allowing
+seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
+but can be run on a different computer as a client only.
 
 **Version:** 1.5.5
 **Author:** Stephen Walsh
@@ -41,8 +41,8 @@ computer as a client only.
 - **Cross-posting Control**: Configurable limits on cross-posted messages
 - **Timezone Support**: Proper timezone handling (TZUTC)
 - **Message Threading**: Preserves reply chains and references
-- **Administrative Panel**: Admin panel interface for message review of held messages, filter management, newsrc
-  management, newsgroups list viewing.
+- **Administrative Panel**: Admin panel interface for message review of held messages, filter management,
+-   newsrc management, newsgroups list viewing.
 
 ## Requirements
 
@@ -120,7 +120,6 @@ Located in the PyGate root directory, the main configuration file controls all a
 [Gateway]
 # Gateway identification
 name = PyGate
-version = 1.5
 sysop = Your Name
 location = Your Location
 origin_line = Your BBS Name, PyGate NNTP<>Fido Gate
@@ -216,8 +215,8 @@ client_mode = true
 - Testing PyGate without affecting server configuration
 - Security-restricted environments where ctlinnd access is unavailable
 
-**Note:** In client-only mode, areafix operations will still update your local newsrc file, but you must ensure the
-  corresponding newsgroups exist on the NNTP server before subscribing to them.
+**Note:** In client-only mode, areafix operations will still update your local newsrc file, but you
+  must ensure the corresponding newsgroups exist on the NNTP server before subscribing to them.
 
 ### Areas Configuration: `config/newsrc`
 
@@ -296,8 +295,8 @@ PyGate supports several operation modes:
 
 ### Automated Operation
 
-PyGate includes a cross-platform automation script (`bin/gate.py`) that provides robust error handling, logging, and
-maintenance features.
+PyGate includes a cross-platform automation script (`bin/gate.py`) that provides robust error handling,
+logging, and maintenance features.
 
 #### Using gate.py (Recommended)
 
@@ -325,7 +324,8 @@ python bin\gate.py --dry-run   # Windows
 - **Statistics tracking**: Logs packet counts to `data/logs/gate_stats.log`
 - **Disk space monitoring**: Warns when space is low
 - **Log rotation**: Automatically rotates large log files with gzip compression
-- **Log cleanup**: Removes old compressed logs based on retention period (configurable via `log_retention_days`)
+- **Log cleanup**: Removes old compressed logs based on retention period (configurable via
+-                  `log_retention_days`)
 - **Maintenance scheduling**: Runs maintenance tasks at 2 AM
 - **Error recovery**: Continues operation even if individual steps fail
 
@@ -388,7 +388,8 @@ data/logs/binkd.log.12Oct25.gz
 
 #### Automatic Log Cleanup
 
-During the 2 AM maintenance cycle, old compressed logs are automatically removed based on the configured retention period.
+During the 2 AM maintenance cycle, old compressed logs are automatically removed based on the configured
+retention period.
 
 **Configuration:**
 
@@ -610,11 +611,11 @@ Add Newsgroup Entry
 ===================
 
 Newsgroup name: alt.test.new
-Low water mark (default: 0): 0
+Low water mark (default: 1): 1
 High water mark (default: 1): 100
 
 New entry to add:
-  alt.test.new: 0-0
+  alt.test.new: 1-1
 
 Add this entry? (y/N): y
 
@@ -729,8 +730,8 @@ tail -f logs/pygate.log | grep -i filter
 
 ## Areafix Wildcard Protection
 
-PyGate includes built-in protection against wildcard subscription attempts that could subscribe users to thousands
-of newsgroups.
+PyGate includes built-in protection against wildcard subscription attempts that could subscribe users
+to thousands of newsgroups.
 
 ### What It Protects Against
 
@@ -746,7 +747,8 @@ The areafix module automatically blocks:
 1. **Wildcard subscriptions**: `*` or `+*` in areafix requests
 2. **Excessive subscriptions**: More than 100 areas in a single request (configurable)
 
-When blocked, the user receives a helpful rejection message explaining what happened and how to correctly subscribe.
+When blocked, the user receives a helpful rejection message explaining what happened and how to
+correctly subscribe.
 
 ### Configuration
 
@@ -811,7 +813,8 @@ QUERY comp.*
 Blocked requests are logged for admin review:
 
 ```
-2025-10-05 14:32:15 - PyGate - WARNING - BLOCKED areafix from Nick Andre: Wildcard subscription '*' is not permitted.
+2025-10-05 14:32:15 - PyGate - WARNING - BLOCKED areafix from Fred Basit: Wildcard subscription '*' is
+not permitted.
 ```
 
 ### Customization
@@ -824,14 +827,6 @@ In `config/pygate.cfg`:
 max_areas_per_request = 50   # More restrictive
 # or
 max_areas_per_request = 200  # More permissive
-```
-
-#### Disable Protection (Not Recommended)
-
-Edit `src/areafix_module.py` line 24:
-```python
-self.blocked_patterns = []  # Disable wildcard blocking
-self.max_areas_per_request = 999999  # Effectively unlimited
 ```
 
 ### Benefits
@@ -972,6 +967,7 @@ pygate/
 ├── pygate.py                   # Main gateway script
 ├── pygate.cfg                  # Main configuration
 ├── admin_panel.py              # Command-line admin interface
+├── README.md                   # This file your reading now
 ├── src/                        # Python modules
 │   ├── cache/                  # Cache files
 │   │   └── __pycache__/        # Python bytecode cache
@@ -994,28 +990,26 @@ pygate/
 │   ├── binkd                   # Binkd mailer binary (Linux)
 │   ├── binkdwin.exe            # Binkd mailer binary (Windows)
 │   └── gate.py                 # Automated PyGate execution script (cross-platform)
-├── data/                       # Runtime data
-│   ├── logs/                   # Log files
-│   │   ├── pygate.log          # PyGate operation logs
-│   │   ├── gate.log            # gate.py automation logs
-│   │   ├── binkd.log           # Binkd mailer logs
-│   │   └── gate_stats.log      # Statistics from gate.py
-│   ├── inbound/                # Incoming FidoNet packets
-│   │   ├── processed/          # Processed packets
-│   │   └── bad/                # Failed packets
-│   ├── outbound/               # Outgoing FidoNet packets
-│   ├── in/                     # Binkd incoming temp
-│   ├── out/                    # Binkd outgoing temp
-│   ├── temp/                   # Temporary files
-│   ├── secure/                 # Secure directory
-│   └── hold/                   # Message hold system
-│       ├── pending/            # Messages awaiting review
-│       ├── approved/           # Approved messages
-│       ├── rejected/           # Rejected messages
-│       ├── backup/             # Backup of held messages after releasing
-│       └── notifications.json  # Notification tracking
-└── docs/                       # Documentation
-    └── README.md               # This file your reading now
+└── data/                       # Runtime data
+    ├── logs/                   # Log files
+    │   ├── pygate.log          # PyGate operation logs
+    │   ├── gate.log            # gate.py automation logs
+    │   ├── binkd.log           # Binkd mailer logs
+    │   └── gate_stats.log      # Statistics from gate.py
+    ├── inbound/                # Incoming FidoNet packets
+    │   ├── processed/          # Processed packets
+    │   └── bad/                # Failed packets
+    ├── outbound/               # Outgoing FidoNet packets
+    ├── in/                     # Binkd incoming temp
+    ├── out/                    # Binkd outgoing temp
+    ├── temp/                   # Temporary files
+    ├── secure/                 # Secure directory
+    └── hold/                   # Message hold system
+        ├── pending/            # Messages awaiting review
+        ├── approved/           # Approved messages
+        ├── rejected/           # Rejected messages
+        ├── backup/             # Backup of held messages after releasing
+        └── notifications.json  # Notification tracking
 ```
 
 ## Examples
@@ -1196,8 +1190,9 @@ grep "gate.py" /var/log/syslog  # or check your system's cron log
 
 ---
 
-**Support:** For issues or questions, check log files first, then review this documentation. The PyGate system provides
-detailed logging to help diagnose problems.
+**Support:** For issues or questions, check log files first, then review this documentation.
+The PyGate system provides detailed logging to help diagnose problems.
 
-**License:** Based on SoupGate by Tom Torfs. Created and enhanced by Stephen Walsh for modern Python and FidoNet standards.
+**License:** Based on SoupGate by Tom Torfs. Created and enhanced by Stephen Walsh for modern Python
+and FidoNet standards.
 
