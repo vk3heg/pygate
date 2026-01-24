@@ -99,20 +99,13 @@ class FidoNetModule:
                         if line is None:  # End of file
                             self.logger.debug("Reached end of file while reading body")
                             break
-                        if line == '':  # End of message (null terminator) - but could also be empty line
-                            # Check if this is truly the end by reading ahead
-                            pos = f.tell()
-                            next_byte = f.read(1)
-                            if not next_byte or next_byte == b'\x00':
-                                self.logger.debug("Found true end of message marker")
-                                break
-                            else:
-                                # It was just an empty line, seek back and continue
-                                f.seek(pos)
-                                self.logger.debug("Empty line in message body, preserving it")
-                                # Preserve empty lines in message body for proper formatting
-                                body_lines.append('')
-                                continue
+                        if line is False:  # End of message (null terminator)
+                            self.logger.debug("Found end of message marker")
+                            break
+                        if line == '':  # Empty line in body - preserve it
+                            self.logger.debug("Empty line in message body, preserving it")
+                            body_lines.append('')
+                            continue
 
                         self.logger.debug(f"Read line: {repr(line)}")
 
@@ -281,8 +274,11 @@ class FidoNetModule:
                 line = self.read_line(f)
                 if line is None:  # End of file
                     break
-                if line == '':  # End of message (null terminator)
+                if line is False:  # End of message (null terminator)
                     break
+                if line == '':  # Empty line - preserve it
+                    body_lines.append('')
+                    continue
 
                 # Check if this is a control line following FSC-0043.002
                 # Control lines have sentinels at beginning of line only
@@ -338,15 +334,21 @@ class FidoNetModule:
             result.extend(byte)
         return result.decode('cp437', errors='replace')
 
-    def read_line(self, f) -> Optional[str]:
-        """Read a line until CR, LF, or null"""
+    def read_line(self, f):
+        """Read a line until CR, LF, or null
+
+        Returns:
+            str: The line content (may be empty for blank lines)
+            False: End of message (null terminator encountered)
+            None: End of file
+        """
         result = b''
         while True:
             byte = f.read(1)
             if not byte:  # EOF
                 return None
-            if byte == b'\x00':  # End of message
-                return ''
+            if byte == b'\x00':  # End of message - return sentinel
+                return False
             if byte == b'\r':
                 # Check for CRLF
                 next_byte = f.read(1)
@@ -465,10 +467,14 @@ class FidoNetModule:
                 'full_subject': message.get('full_subject'),  # Preserve full subject for long subjects
                 'text': message.get('text', ''),
                 'datetime': message.get('datetime', datetime.now()),
-                'orig_node': self.get_our_node(),
+                'orig_zone': self.get_our_zone(),
                 'orig_net': self.get_our_net(),
-                'dest_node': self.get_dest_node(area),
+                'orig_node': self.get_our_node(),
+                'orig_point': self.get_our_point(),
+                'dest_zone': self.get_dest_zone(area),
                 'dest_net': self.get_dest_net(area),
+                'dest_node': self.get_dest_node(area),
+                'dest_point': self.get_dest_point(area),
                 'attr': 0,  # Message attributes
                 'msgid': message.get('msgid', ''),
                 'reply': message.get('reply', ''),
@@ -616,8 +622,8 @@ class FidoNetModule:
             0x0001,                       # capword (H) - 44
             our_address.get('zone', 1),   # orig_zone (H) - 46
             dest_zone,                    # dest_zone (H) - 48
-            0,                            # orig_point (H) - 50
-            0,                            # dest_point (H) - 52
+            our_address.get('point', 0),  # orig_point (H) - 50
+            dest_address.get('point', 0), # dest_point (H) - 52
             0                             # extrainfo (I) - 54
         )
 
@@ -678,7 +684,7 @@ class FidoNetModule:
             text_lines.append(f"AREA:{message['area']}")
 
         # Add kludges (^a control lines)
-        # For netmail: Add INTL kludge first (FTS-5001)
+        # For netmail: Add INTL, FMPT, TOPT kludges (FTS-0001, FSC-0039)
         if not message.get('area'):  # Netmail only
             # INTL format: ^aINTL <dest_zone>:<dest_net>/<dest_node> <orig_zone>:<orig_net>/<orig_node>
             dest_zone = message.get('dest_zone', 0)
@@ -688,6 +694,16 @@ class FidoNetModule:
             orig_net = message.get('orig_net', 0)
             orig_node = message.get('orig_node', 0)
             text_lines.append(f"\x01INTL {dest_zone}:{dest_net}/{dest_node} {orig_zone}:{orig_net}/{orig_node}")
+
+            # FMPT: From Point - add if originating from a point address
+            orig_point = message.get('orig_point', 0)
+            if orig_point > 0:
+                text_lines.append(f"\x01FMPT {orig_point}")
+
+            # TOPT: To Point - add if destination is a point address
+            dest_point = message.get('dest_point', 0)
+            if dest_point > 0:
+                text_lines.append(f"\x01TOPT {dest_point}")
 
         if message.get('msgid'):
             text_lines.append(f"\x01MSGID: {message['msgid']}")
@@ -808,6 +824,38 @@ class FidoNetModule:
             raise ValueError("linked_address must be configured in [FidoNet] section")
         linked_address = self.parse_fido_address(linked_addr)
         return linked_address['net']
+
+    def get_our_zone(self) -> int:
+        """Get our FidoNet zone number"""
+        gateway_addr = self.config.get('FidoNet', 'gateway_address')
+        if not gateway_addr:
+            raise ValueError("gateway_address must be configured in [FidoNet] section")
+        address = self.parse_fido_address(gateway_addr)
+        return address['zone']
+
+    def get_our_point(self) -> int:
+        """Get our FidoNet point number"""
+        gateway_addr = self.config.get('FidoNet', 'gateway_address')
+        if not gateway_addr:
+            raise ValueError("gateway_address must be configured in [FidoNet] section")
+        address = self.parse_fido_address(gateway_addr)
+        return address['point']
+
+    def get_dest_zone(self, area: str) -> int:
+        """Get destination zone for area"""
+        linked_addr = self.config.get('FidoNet', 'linked_address')
+        if not linked_addr:
+            raise ValueError("linked_address must be configured in [FidoNet] section")
+        linked_address = self.parse_fido_address(linked_addr)
+        return linked_address['zone']
+
+    def get_dest_point(self, area: str) -> int:
+        """Get destination point for area"""
+        linked_addr = self.config.get('FidoNet', 'linked_address')
+        if not linked_addr:
+            raise ValueError("linked_address must be configured in [FidoNet] section")
+        linked_address = self.parse_fido_address(linked_addr)
+        return linked_address['point']
 
     def get_our_origin(self) -> str:
         """Get our origin line"""

@@ -20,18 +20,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.gateway import Gateway
 from src.config_validator import ConfigValidator
 
-
-def get_version(config_file='pygate.cfg'):
-    """Read version from configuration file"""
-    try:
-        config = configparser.ConfigParser()
-        config.read(config_file)
-        return config.get('Gateway', 'version', fallback='1.0')
-    except:
-        return '1.0'
-
-
-__version__ = get_version()
+# Version string - this is the authoritative version for PyGate
+# This overrides any version setting in the config file
+__version__ = '1.5.5'
 
 
 def signal_handler(signum, frame):
@@ -94,7 +85,7 @@ Configuration:
     # Print banner
     print(f"PyGate v{__version__} - Python FidoNet-NNTP Gateway")
     print("Based on SoupGate by Tom Torfs")
-    print("Copyright (c) 2025 by Stephen Walsh")
+    print("Copyright (c) 2025-2026 by Stephen Walsh")
     print()
 
     # Initialize gateway

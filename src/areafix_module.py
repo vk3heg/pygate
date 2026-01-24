@@ -730,8 +730,8 @@ class AreafixModule:
             from .fidonet_module import FidoNetModule
             fidonet = FidoNetModule(self.config, self.logger)
 
-            # Temporarily modify the FidoNet create_message method to handle explicit addressing
             # Add message to pending messages directly with our addressing
+            # Include full 4D addressing for proper point support
             fido_message = {
                 'area': '',  # Netmail
                 'from_name': response_message['from_name'],
@@ -739,10 +739,14 @@ class AreafixModule:
                 'subject': response_message['subject'],
                 'text': response_message['text'],
                 'datetime': response_message['datetime'],
-                'orig_node': fidonet.get_our_node(),
+                'orig_zone': fidonet.get_our_zone(),
                 'orig_net': fidonet.get_our_net(),
-                'dest_node': response_message['dest_node'],
+                'orig_node': fidonet.get_our_node(),
+                'orig_point': fidonet.get_our_point(),
+                'dest_zone': fidonet.get_dest_zone(''),
                 'dest_net': response_message['dest_net'],
+                'dest_node': response_message['dest_node'],
+                'dest_point': fidonet.get_dest_point(''),
                 'attr': 0,  # Message attributes
                 'msgid': response_message.get('msgid', ''),
                 'reply': response_message.get('reply', ''),

@@ -32,6 +32,13 @@ class Gateway:
         # Load configuration
         self.load_config()
 
+        # Set authoritative version from pygate module (overrides config file)
+        try:
+            import pygate
+            self.config.set('Gateway', 'version', pygate.__version__)
+        except (ImportError, AttributeError):
+            pass  # Keep config file version if pygate module not available
+
         # Setup logging
         self.setup_logging()
 

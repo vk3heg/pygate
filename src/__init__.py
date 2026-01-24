@@ -5,20 +5,14 @@ Based on SoupGate by Tom Torfs
 A modular Python implementation of FidoNet <-> NNTP gateway functionality.
 """
 
-import configparser
-import os
-
 
 def get_version():
-    """Read version from configuration file"""
+    """Get version from main pygate module"""
     try:
-        # Look for pygate.cfg in parent directory
-        config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'pygate.cfg')
-        config = configparser.ConfigParser()
-        config.read(config_file)
-        return config.get('Gateway', 'version', fallback='1.0')
-    except:
-        return '1.0'
+        import pygate
+        return pygate.__version__
+    except (ImportError, AttributeError):
+        return '1.5'  # Fallback if pygate module not yet loaded
 
 
 __version__ = get_version()
