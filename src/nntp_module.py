@@ -289,6 +289,11 @@ class NNTPModule:
         lines.append(f"Newsgroups: {newsgroup}")
         lines.append(f"Subject: {message.get('subject', '')}")
 
+        # MIME headers with charset from FidoNet CHRS kludge
+        mime_charset = self.fido_charset_to_mime(message.get('chrs', ''))
+        lines.append("MIME-Version: 1.0")
+        lines.append(f"Content-Type: text/plain; charset={mime_charset}")
+
         # Handle datetime - may be datetime object or ISO string (from hold system)
         msg_datetime = message.get('datetime', datetime.now())
         if isinstance(msg_datetime, str):
@@ -586,6 +591,60 @@ class NNTPModule:
                 return 'pygate.local'
         except Exception:
             return 'pygate.local'
+
+    def fido_charset_to_mime(self, chrs: str) -> str:
+        """Convert FidoNet CHRS kludge to MIME charset name
+
+        FidoNet CHRS format: "CHARSET LEVEL" (e.g., "CP437 2", "UTF-8 4")
+        Level 2 = 8-bit, Level 4 = multi-byte (UTF-8)
+        """
+        if not chrs:
+            return 'us-ascii'  # Default per RFC 2045
+
+        # Extract charset name (ignore level number)
+        parts = chrs.strip().split()
+        if not parts:
+            return 'us-ascii'
+
+        charset = parts[0].upper()
+
+        # Map FidoNet charset names to MIME charset names
+        charset_map = {
+            # CP437 variants (DOS/IBM PC)
+            'CP437': 'cp437',
+            'IBMPC': 'cp437',
+            'IBM': 'cp437',
+            '+7_Fstrstrstrstrstrstrstrstr': 'cp866',  # Russian strstrSTRSTR
+            # CP850 (DOS Latin-1)
+            'CP850': 'cp850',
+            # CP866 (DOS Russian)
+            'CP866': 'cp866',
+            # ISO-8859 variants
+            'LATIN-1': 'iso-8859-1',
+            'LATIN1': 'iso-8859-1',
+            'ISO-8859-1': 'iso-8859-1',
+            'LATIN-2': 'iso-8859-2',
+            'LATIN2': 'iso-8859-2',
+            'ISO-8859-2': 'iso-8859-2',
+            'LATIN-9': 'iso-8859-15',
+            'LATIN9': 'iso-8859-15',
+            'ISO-8859-15': 'iso-8859-15',
+            # Windows code pages
+            'CP1250': 'windows-1250',
+            'CP1251': 'windows-1251',
+            'CP1252': 'windows-1252',
+            # KOI8 (Russian)
+            'KOI8-R': 'koi8-r',
+            'KOI8R': 'koi8-r',
+            # UTF-8
+            'UTF-8': 'utf-8',
+            'UTF8': 'utf-8',
+            # ASCII
+            'ASCII': 'us-ascii',
+            'US-ASCII': 'us-ascii',
+        }
+
+        return charset_map.get(charset, 'cp437')  # Default to cp437 for unknown
 
     def list_newsgroups(self) -> List[Tuple[str, str, str, str]]:
         """List available newsgroups"""

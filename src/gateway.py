@@ -1082,13 +1082,14 @@ class Gateway:
             'newsgroup': area_config.get('newsgroup', ''),
             'from_name': from_name,
             'subject': subject,
-            'date': message_date,
-            'body': body,
-            'message_id': fido_message.get('msgid', ''),
-            'references': fido_message.get('reply', ''),
+            'datetime': message_date,  # build_nntp_article expects 'datetime'
+            'text': body,              # build_nntp_article expects 'text'
+            'msgid': fido_message.get('msgid', ''),  # build_nntp_article expects 'msgid'
+            'reply': fido_message.get('reply', ''),  # build_nntp_article expects 'reply'
             'organization': self.config.get('FidoNet', 'origin_line'),
-            'original_charset': chrs_str,  # Keep track of original charset
-            'area': fido_message.get('area', '')  # Include FidoNet area for mapping
+            'chrs': chrs_str,          # build_nntp_article expects 'chrs' for charset
+            'area': fido_message.get('area', ''),  # Include FidoNet area for mapping
+            'origin': fido_message.get('origin', '')  # Include origin line
         }
 
         return nntp_message
