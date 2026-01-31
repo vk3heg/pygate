@@ -548,6 +548,7 @@ class NNTPModule:
             return f"<{uuid.uuid4()}@pygate.fidonet>"
 
         # Convert FidoNet format "zone:net/node[.point] serial" to RFC-compliant
+        # Also handles Synchronet-style MSGIDs like "5036.fidonet_fidotest@1:135/205 2ddfd6b0"
         try:
             parts = fido_msgid.strip().split()
             if len(parts) >= 2:
@@ -555,15 +556,16 @@ class NNTPModule:
                 serial_part = parts[1]
 
                 # Convert address format: "3:633/280.1" -> "3.633.280.1"
-                # Replace colons and slashes with dots for RFC compliance
-                safe_address = address_part.replace(':', '.').replace('/', '.')
+                # Replace colons, slashes, and @ with dots for RFC compliance
+                # The @ must be replaced to avoid invalid Message-IDs with multiple @ symbols
+                safe_address = address_part.replace('@', '.').replace(':', '.').replace('/', '.')
 
                 # Create RFC-compliant Message-ID
                 domain = self.get_message_id_domain()
                 return f"<{serial_part}.{safe_address}@{domain}>"
             else:
                 # Fallback for malformed MSGID
-                safe_msgid = fido_msgid.replace(':', '.').replace('/', '.').replace(' ', '.')
+                safe_msgid = fido_msgid.replace('@', '.').replace(':', '.').replace('/', '.').replace(' ', '.')
                 domain = self.get_message_id_domain()
                 return f"<{safe_msgid}@{domain}>"
 

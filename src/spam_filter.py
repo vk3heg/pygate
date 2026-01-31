@@ -47,6 +47,7 @@ class SpamFilterModule:
         self.add_filter(self.injection_info_filter, "Injection-Info Filter", priority=9)
         self.add_filter(self.nntp_posting_host_filter, "NNTP-Posting-Host Filter", priority=9)
         self.add_filter(self.x_trace_filter, "X-Trace Filter", priority=9)
+        self.add_filter(self.origin_filter, "Origin Filter", priority=9)  # FidoNet origin line
         self.add_filter(self.crosspost_filter, "Cross-Post Filter", priority=8)
 
         self.logger.info(f"Loaded {len(self.filters)} built-in spam filters")
@@ -70,7 +71,8 @@ class SpamFilterModule:
             'Organization': [],
             'Injection-Info': [],
             'NNTP-Posting-Host': [],
-            'X-Trace': []
+            'X-Trace': [],
+            'Origin': []  # FidoNet origin line filter
         }
 
         filter_file = self.config.get('SpamFilter', 'filter_file')
@@ -183,6 +185,8 @@ class SpamFilterModule:
                     elif filter_name == "X-Trace Filter":
                         headers = message.get('headers', {})
                         log_info = headers.get('x-trace', 'Unknown')
+                    elif filter_name == "Origin Filter":
+                        log_info = message.get('origin', 'Unknown')
                     else:
                         # Default to subject for Subject Filter and any other filters
                         log_info = message.get('subject', 'No Subject')
@@ -204,6 +208,17 @@ class SpamFilterModule:
     def from_filter(self, message: Dict[str, Any]) -> bool:
         """Filter based on From header patterns"""
         return self._check_header_patterns(message, 'From', 'from_name')
+
+    def origin_filter(self, message: Dict[str, Any]) -> bool:
+        """Filter based on FidoNet Origin line patterns
+
+        The origin line contains the BBS name and FidoNet address, e.g.:
+        * Origin: My BBS Name (1:135/250)
+
+        Use patterns like: ^Origin:(?i).*\(1:135/250\)
+        """
+        origin = message.get('origin', '')
+        return self._check_pattern_match('Origin', origin)
 
     def user_agent_filter(self, message: Dict[str, Any]) -> bool:
         """Filter based on User-Agent header patterns"""

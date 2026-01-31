@@ -4,10 +4,11 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Version:** 1.5.6
-**Author:** Stephen Walsh
-**Contact:** vk3heg@gmail.com | FidoNet 3:633/280 | FSXNet 21:1/195 | Amiganet 39:901/280
-**Based on:** SoupGate by Tom Torfs
+**Version:  1.5.8
+**Author:   Stephen Walsh
+**Contact:  Please use one of these Fidonet echomail area's first. "PYTHON" or "LINUX_BBS" before email.
+**Contact:  vk3heg@gmail.com | FidoNet 3:633/280 | FSXNet 21:1/195 | Amiganet 39:901/280
+**Based on: SoupGate by Tom Torfs
 
 ## Table of Contents
 
@@ -569,8 +570,8 @@ The newsrc manager can synchronize with your NNTP server (in full gateway mode):
 
 When running in client-only mode (`client_mode = true`), the admin panel will display:
 ```
-ℹ️  Running in client mode - newsrc updated, server not modified
-✅ Newsgroup 'alt.test.new' added to newsrc
+Running in client mode - newsrc updated, server not modified
+Newsgroup 'alt.test.new' added to newsrc
 ```
 
 ### Example Admin Panel Session
@@ -594,8 +595,8 @@ Select option (1-6, Q): 6
 Newsgroup Manager
 =================
 
-📄 Current newsrc file: newsrc
-📊 Newsgroup entries: 125
+Current newsrc file: newsrc
+Newsgroup entries: 125
 
 1. Sort newsrc file alphabetically
 2. View newsrc file
@@ -619,14 +620,14 @@ New entry to add:
 
 Add this entry? (y/N): y
 
-✅ Backup created: newsrc.bak
-✅ Successfully added newsgroup 'alt.test.new' to newsrc file
-📄 Updated file: newsrc
-📊 Total entries: 126
+Backup created: newsrc.bak
+Successfully added newsgroup 'alt.test.new' to newsrc file
+Updated file: newsrc
+Total entries: 126
 
 Adding newsgroup to NNTP server...
-✅ Successfully added newsgroup 'alt.test.new' to NNTP server
-📝 Server response: Created alt.test.new
+Successfully added newsgroup 'alt.test.new' to NNTP server
+Server response: Created alt.test.new
 ```
 
 ## Spam Filtering
@@ -683,15 +684,15 @@ Edit `config/filter.cfg` to add custom regex patterns:
 - `\b` - Another word boundary
 
 **What it catches:**
-- ✅ "Free money online!"
-- ✅ "Get FREE CASH now"
-- ✅ "Win free prize today"
-- ✅ "Free gift with purchase"
+- "Free money online!"
+- "Get FREE CASH now"
+- "Win free prize today"
+- "Free gift with purchase"
 
 **What it WON'T catch:**
-- ❌ "Freedom of speech" (no space + target word)
-- ❌ "Sugar-free diet" (free not followed by target words)
-- ❌ "Free software" (software not in target word list)
+- "Freedom of speech" (no space + target word)
+- "Sugar-free diet" (free not followed by target words)
+- "Free software" (software not in target word list)
 
 #### Example 2: Drug Sales
 ```regex
@@ -704,10 +705,10 @@ Edit `config/filter.cfg` to add custom regex patterns:
 3. Second group: `(dmt|lsd|psilocybin|mushroom|marijuana|cannabis|hemp)` - substance words
 
 **Examples:**
-- ✅ "Buy hemp" - matches (buy + space + hemp)
-- ✅ "Order cannabis" - matches (order + space + cannabis)
-- ❌ "Buy groceries" - first group matches, "groceries" not in second
-- ❌ "Hemp products" - second group matches, no action word
+- "Buy hemp" - matches (buy + space + hemp)
+- "Order cannabis" - matches (order + space + cannabis)
+- "Buy groceries" - first group matches, "groceries" not in second
+- "Hemp products" - second group matches, no action word
 
 ### Testing Filters
 
@@ -1000,8 +1001,6 @@ pygate/
     │   ├── processed/          # Processed packets
     │   └── bad/                # Failed packets
     ├── outbound/               # Outgoing FidoNet packets
-    ├── in/                     # Binkd incoming temp
-    ├── out/                    # Binkd outgoing temp
     ├── temp/                   # Temporary files
     ├── secure/                 # Secure directory
     └── hold/                   # Message hold system
@@ -1018,11 +1017,11 @@ pygate/
 
 ```bash
 # 1. Configure PyGate
-vim config/pygate.cfg
+nano config/pygate.cfg
 
 # 2. Set up initial areas
-echo "comp.lang.python: 0-0" > config/newsrc
-echo "alt.bbs.mystic: 0-0" >> config/newsrc
+echo "comp.lang.python: 1-1" > config/newsrc
+echo "alt.bbs.mystic: 1-1" >> config/newsrc
 
 # 3. Test configuration
 ./pygate.py --check
@@ -1067,7 +1066,7 @@ python3 admin_panel.py
 Manual method (full gateway mode):
 ```bash
 # 1. Add to newsrc manually
-echo "comp.sys.amiga: 0-0" >> config/newsrc
+echo "comp.sys.amiga: 1-1" >> config/newsrc
 
 # 2. Add to NNTP server
 ctlinnd newgroup comp.sys.amiga
@@ -1084,7 +1083,7 @@ Manual method (client-only mode):
 # 1. Ensure newsgroup exists on remote NNTP server first
 
 # 2. Add to newsrc manually
-echo "comp.sys.amiga: 0-0" >> config/newsrc
+echo "comp.sys.amiga: 1-1" >> config/newsrc
 
 # 3. Sort newsrc file using admin panel
 python3 admin_panel.py  # Option 6 → Option 1
@@ -1117,15 +1116,15 @@ python3 admin_panel.py
 
 # 2. Select Newsgroup Manager (option 6)
 # Menu shows current file status:
-# 📄 Current newsrc file: config/newsrc
-# 📊 Newsgroup entries: 125
+# Current newsrc file: config/newsrc
+# Newsgroup entries: 125
 
 # 3. View newsrc with paging and search
 # Select option 2: View newsrc file
 # Navigation example:
 Navigation: S                    # Search
 Search for: python              # Find python-related groups
-# Shows: 🔍 Searching for: 'python' (> marks matches)
+# Shows: Searching for: 'python' (> marks matches)
 #   43: > comp.lang.python      0-2341
 Navigation: N                    # Next page (search persists)
 Navigation: C                    # Clear search
@@ -1136,8 +1135,8 @@ Navigation: Q                    # Back to menu
 # 4. Add new newsgroup with server integration
 # Select option 5: Add newsgroup entry
 Newsgroup name: alt.test.new
-Low water mark: 0
-High water mark: 0
+Low water mark: 1
+High water mark: 1
 # Automatically runs ctlinnd newgroup
 
 # 5. Sort and backup

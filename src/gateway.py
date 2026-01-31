@@ -738,6 +738,19 @@ class Gateway:
         subject = nntp_message.get('subject', '')
         message_body = nntp_message.get('body', '')
 
+        # Check for X-FTN-MSGID header - if present, this message originated from FidoNet
+        # and we should use the original MSGID to prevent re-gating/duplication
+        headers = nntp_message.get('headers', {})
+        original_ftn_msgid = headers.get('x-ftn-msgid', '').strip()
+
+        if original_ftn_msgid:
+            # Use original FidoNet MSGID to prevent duplicate detection failure
+            fido_msgid = original_ftn_msgid
+            self.logger.debug(f"Using original X-FTN-MSGID: {fido_msgid}")
+        else:
+            # Generate new MSGID from NNTP Message-ID
+            fido_msgid = self.generate_fido_msgid(nntp_message.get('message_id', ''))
+
         fido_message = {
             'area': area_tag,
             'from_name': nntp_message.get('from_name', 'Unknown'),
@@ -748,7 +761,7 @@ class Gateway:
             # Store full subject if it will be truncated (for write_message to handle)
             'full_subject': subject if len(subject) > 71 else None,
             'origin': f"{self.config.get('FidoNet', 'origin_line')} ({gateway_address})",
-            'msgid': self.generate_fido_msgid(nntp_message.get('message_id', '')),
+            'msgid': fido_msgid,
             'reply': self.generate_fido_reply(nntp_message.get('references', '')),
             # FSC-0043.002 echomail trailer components
             'tearline': self.generate_tearline(),
