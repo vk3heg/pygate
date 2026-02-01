@@ -7,6 +7,7 @@ Handles NNTP server communication for the gateway
 import os
 import time
 import re
+import socket
 import email
 from email.utils import parseaddr, formataddr, parsedate_to_datetime
 from email.header import decode_header
@@ -172,6 +173,10 @@ class NNTPModule:
                 end_article = min(start_article + fetch_limit - 1, last_num)
 
             # Fetch articles
+            failed_articles = []
+            connection_error_count = 0
+            max_connection_errors = 3  # Reconnect after this many consecutive connection errors
+
             for article_num in range(start_article, end_article + 1):
                 try:
                     resp, article_info = self.connection.article(str(article_num))
@@ -182,12 +187,61 @@ class NNTPModule:
                     if message:
                         messages.append(message)
                         self.logger.debug(f"Fetched article {article_num}: {message.get('subject', 'No Subject')}")
+                    connection_error_count = 0  # Reset on success
 
-                except NNTPTemporaryError:
-                    # Article doesn't exist, skip
+                except NNTPTemporaryError as e:
+                    # Article doesn't exist (430/423 error), skip but log
+                    self.logger.debug(f"Article {article_num} not available: {e}")
+                    continue
+                except (TimeoutError, socket.timeout) as e:
+                    # Timeout error - connection may be broken
+                    self.logger.error(f"Timeout fetching article {article_num} from {newsgroup}: {e}")
+                    failed_articles.append(article_num)
+                    connection_error_count += 1
+
+                    # Try to reconnect after repeated connection errors
+                    if connection_error_count >= max_connection_errors:
+                        self.logger.warning(f"Multiple connection errors, attempting reconnect to {newsgroup}")
+                        self.disconnect()
+                        if self.connect():
+                            # Reselect the newsgroup after reconnecting
+                            try:
+                                self.connection.group(newsgroup)
+                                connection_error_count = 0
+                                self.logger.info(f"Reconnected successfully, continuing fetch from article {article_num + 1}")
+                            except Exception as reconnect_e:
+                                self.logger.error(f"Failed to reselect {newsgroup} after reconnect: {reconnect_e}")
+                                break  # Give up on this newsgroup
+                        else:
+                            self.logger.error(f"Reconnect failed, aborting fetch for {newsgroup}")
+                            break  # Give up on this newsgroup
+                    continue
+                except (OSError, ConnectionError, BrokenPipeError) as e:
+                    # Connection broken - need to reconnect
+                    self.logger.error(f"Connection error fetching article {article_num} from {newsgroup}: {type(e).__name__}: {e}")
+                    failed_articles.append(article_num)
+                    connection_error_count += 1
+
+                    # Try to reconnect
+                    if connection_error_count >= max_connection_errors:
+                        self.logger.warning(f"Connection broken, attempting reconnect to {newsgroup}")
+                        self.disconnect()
+                        if self.connect():
+                            try:
+                                self.connection.group(newsgroup)
+                                connection_error_count = 0
+                                self.logger.info(f"Reconnected successfully, continuing fetch from article {article_num + 1}")
+                            except Exception as reconnect_e:
+                                self.logger.error(f"Failed to reselect {newsgroup} after reconnect: {reconnect_e}")
+                                break
+                        else:
+                            self.logger.error(f"Reconnect failed, aborting fetch for {newsgroup}")
+                            break
                     continue
                 except Exception as e:
-                    self.logger.error(f"Error fetching article {article_num}: {e}")
+                    # Other errors - log with full details but continue
+                    self.logger.error(f"Error fetching article {article_num} from {newsgroup}: {type(e).__name__}: {e}")
+                    failed_articles.append(article_num)
                     continue
 
             # Log fetch results with context
@@ -196,10 +250,13 @@ class NNTPModule:
             else:
                 self.logger.info(f"Fetched {len(messages)} messages from {newsgroup}")
 
-            # Update last processed article to the end of our fetch range
-            if messages:
-                # Update to the highest article number we attempted to fetch
-                area_config['last_article'] = end_article
+            # Log failed articles if any
+            if failed_articles:
+                self.logger.warning(f"Failed to fetch {len(failed_articles)} article(s) from {newsgroup}: {failed_articles[:10]}{'...' if len(failed_articles) > 10 else ''}")
+
+            # Always update last processed article to the end of our fetch range
+            # This ensures we don't retry problematic articles forever
+            area_config['last_article'] = end_article
 
         except Exception as e:
             self.logger.error(f"Error fetching from {newsgroup}: {e}")
@@ -538,6 +595,8 @@ class NNTPModule:
 
     def convert_fido_msgid(self, fido_msgid: str) -> str:
         """Convert FidoNet MSGID to NNTP Message-ID"""
+        import re
+
         # If already in NNTP format, return as-is
         if fido_msgid.startswith('<') and fido_msgid.endswith('>'):
             return fido_msgid
@@ -554,6 +613,26 @@ class NNTPModule:
             if len(parts) >= 2:
                 address_part = parts[0]
                 serial_part = parts[1]
+
+                # Check if this is a preserved NNTP message-id (starts with <)
+                # Format: "<original-message-id> crc32"
+                if address_part.startswith('<') and address_part.endswith('>'):
+                    # Extract the message-id without angle brackets
+                    original_msgid = address_part[1:-1]
+
+                    # Check if the domain part contains an IPv6 address
+                    # IPv6 addresses have colons and would break Message-ID parsing
+                    if '@' in original_msgid:
+                        local_part, domain_part = original_msgid.rsplit('@', 1)
+
+                        # Detect IPv6 address: contains colons and only hex digits/colons
+                        if ':' in domain_part and re.match(r'^[0-9a-fA-F:]+$', domain_part):
+                            # Sanitize IPv6 address by replacing colons with hyphens
+                            safe_domain = domain_part.replace(':', '-')
+                            return f"<{local_part}@{safe_domain}>"
+
+                    # No IPv6 issue, return the original message-id as-is
+                    return address_part
 
                 # Convert address format: "3:633/280.1" -> "3.633.280.1"
                 # Replace colons, slashes, and @ with dots for RFC compliance

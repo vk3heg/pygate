@@ -817,7 +817,9 @@ class Gateway:
             # Try to get a reasonable hostname
             try:
                 hostname = socket.getfqdn()
-                if hostname == 'localhost' or '.' not in hostname:
+                # Reject localhost, hostnames without dots, and IPv6 addresses
+                # IPv6 addresses contain colons which break Message-ID parsing in NNTP
+                if hostname == 'localhost' or '.' not in hostname or ':' in hostname:
                     hostname = self.config.get('Gateway', 'domain', 'gateway.local')
             except:
                 hostname = self.config.get('Gateway', 'domain', 'gateway.local')

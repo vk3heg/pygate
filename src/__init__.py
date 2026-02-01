@@ -12,7 +12,7 @@ def get_version():
         import pygate
         return pygate.__version__
     except (ImportError, AttributeError):
-        return '1.5.8'  # Fallback if pygate module not yet loaded
+        return '1.5.10'  # Fallback if pygate module not yet loaded
 
 
 __version__ = get_version()

@@ -4,7 +4,7 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Version:  1.5.8
+**Version:  1.5.10
 **Author:   Stephen Walsh
 **Contact:  Please use one of these Fidonet echomail area's first. "PYTHON" or "LINUX_BBS" before email.
 **Contact:  vk3heg@gmail.com | FidoNet 3:633/280 | FSXNet 21:1/195 | Amiganet 39:901/280
@@ -64,8 +64,8 @@ but can be run on a different computer as a client only.
 
 1. **Extract PyGate files** to your chosen directory:
    ```bash
-   mkdir /opt/pygate
-   cd /opt/pygate
+   mkdir /home/username/pygate
+   cd pygate
    # Extract files here
    ```
 
