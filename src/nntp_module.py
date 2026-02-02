@@ -737,10 +737,11 @@ class NNTPModule:
             newsgroups = []
 
             for group_info in groups:
-                name = group_info.group
-                last_num = group_info.last
-                first_num = group_info.first
-                flag = group_info.flag
+                # Custom NNTP client returns tuples: (name, last, first, flag)
+                name = group_info[0]
+                last_num = group_info[1]
+                first_num = group_info[2]
+                flag = group_info[3]
                 newsgroups.append((name, last_num, first_num, flag))
 
             return newsgroups

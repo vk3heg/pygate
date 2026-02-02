@@ -980,10 +980,12 @@ class AdminPanel:
             print("5. Restore from backup")
             print("6. Add newsgroup entry")
             print("7. Delete newsgroup entry")
+            print("8. Fetch available newsgroups from server")
+            print("9. Mark groups read")
             print("Q. Back to main menu")
             print()
 
-            choice = self.get_input("Select option (1-7, Q): ").upper()
+            choice = self.get_input("Select option (1-9, Q): ").upper()
 
             if choice == '1':
                 self.sort_newsrc_file(newsrc_file)
@@ -999,6 +1001,10 @@ class AdminPanel:
                 self.add_newsgroup_entry(newsrc_file)
             elif choice == '7':
                 self.delete_newsgroup_entry(newsrc_file)
+            elif choice == '8':
+                self.fetch_newsgroups_from_server()
+            elif choice == '9':
+                self.mark_groups_read(newsrc_file)
             elif choice == 'Q':
                 break
             else:
@@ -1390,6 +1396,562 @@ class AdminPanel:
                 matches.append(i)
         return matches
 
+    def fetch_newsgroups_from_server(self):
+        """Fetch list of newsgroups from the NNTP server"""
+        self.clear_screen()
+        self.show_header()
+        print("Fetch Newsgroups from Server")
+        print("=" * 50)
+        print()
+
+        if not self.config:
+            self.show_error("Configuration not loaded")
+            return
+
+        # Check if NNTP settings exist
+        if not self.config.has_section('NNTP'):
+            self.show_error("NNTP configuration not found")
+            return
+
+        print("Connecting to NNTP server...")
+        print()
+
+        try:
+            import logging
+            from src.nntp_module import NNTPModule
+
+            # Create a logger for the NNTP module
+            logger = logging.getLogger('AdminPanel.NNTP')
+
+            # Create NNTP module instance
+            nntp = NNTPModule(self.config, logger)
+
+            # Fetch newsgroups
+            print("Fetching newsgroup list (this may take a moment)...")
+            newsgroups = nntp.list_newsgroups()
+
+            # Disconnect when done
+            nntp.disconnect()
+
+            if not newsgroups:
+                self.show_error("No newsgroups returned from server (check connection/credentials)")
+                return
+
+            print(f"Retrieved {len(newsgroups):,} newsgroups from server")
+            print()
+
+            # Ask user what to do with the list
+            print("Options:")
+            print("1. View newsgroups list (paged)")
+            print("2. Save to newsgroups file")
+            print("3. Both view and save")
+            print("Q. Cancel")
+            print()
+
+            choice = self.get_input("Select option (1-3, Q): ").upper()
+
+            if choice == 'Q':
+                return
+            elif choice in ['1', '3']:
+                self.display_fetched_newsgroups(newsgroups)
+
+            if choice in ['2', '3']:
+                self.save_fetched_newsgroups(newsgroups)
+
+        except ImportError as e:
+            self.show_error(f"Failed to import NNTP module: {e}")
+        except Exception as e:
+            self.show_error(f"Error fetching newsgroups: {e}")
+
+    def display_fetched_newsgroups(self, newsgroups):
+        """Display fetched newsgroups with paging support"""
+        # Convert newsgroups to display lines
+        lines = []
+        for name, last_num, first_num, flag in newsgroups:
+            # Format: groupname (articles: first-last) [flag]
+            lines.append(f"{name} (articles: {first_num}-{last_num}) [{flag}]")
+
+        # Get configurable page size
+        lines_per_page = 40
+        if self.config and self.config.has_option('Files', 'newsgrouppagesize'):
+            try:
+                lines_per_page = self.config.getint('Files', 'newsgrouppagesize')
+            except ValueError:
+                lines_per_page = 40
+
+        current_page = 0
+        total_pages = (len(lines) + lines_per_page - 1) // lines_per_page
+        current_search_term = None
+        search_matches = []
+        current_match_index = 0
+
+        while True:
+            self.clear_screen()
+            self.show_header()
+            print("Newsgroups from Server")
+            print("=" * 50)
+            print()
+
+            start_line = current_page * lines_per_page
+            end_line = min(start_line + lines_per_page, len(lines))
+
+            print(f" Total groups: {len(lines):,} | Page {current_page + 1} of {total_pages} | Groups {start_line + 1}-{end_line}")
+            if current_search_term and search_matches:
+                print(f" Searching for: '{current_search_term}' | Match {current_match_index + 1} of {len(search_matches)} (> marks matches)")
+            elif current_search_term:
+                print(f" Searching for: '{current_search_term}' (> marks matches)")
+            print()
+
+            for i in range(start_line, end_line):
+                line_content = lines[i]
+                line_number = f"{i + 1:6d}: "
+
+                if current_search_term and current_search_term.lower() in line_content.lower():
+                    print(f"{line_number}> {line_content}")
+                else:
+                    print(f"{line_number}  {line_content}")
+
+            print()
+            if current_page > 0 and current_page < total_pages - 1:
+                print("N. Next page | P. Previous page | F. First page | L. Last page")
+            elif current_page > 0:
+                print("P. Previous page | F. First page | L. Last page")
+            elif current_page < total_pages - 1:
+                print("N. Next page | F. First page | L. Last page")
+            else:
+                print("F. First page | L. Last page")
+
+            if search_matches:
+                print("G. Go to page | S. Search | >. Next match | <. Prev match | C. Clear search | Q. Done")
+            else:
+                print("G. Go to page | S. Search | C. Clear search | Q. Done")
+
+            choice = self.get_input("Command: ").upper().strip()
+
+            if choice in ['Q', 'QUIT', 'EXIT']:
+                break
+            elif choice in ['N', 'NEXT']:
+                if current_page < total_pages - 1:
+                    current_page += 1
+            elif choice in ['P', 'PREV', 'PREVIOUS']:
+                if current_page > 0:
+                    current_page -= 1
+            elif choice in ['F', 'FIRST']:
+                current_page = 0
+            elif choice in ['L', 'LAST']:
+                current_page = total_pages - 1
+            elif choice in ['G', 'GOTO']:
+                page_input = self.get_input(f"Enter page number (1-{total_pages}): ")
+                try:
+                    page_num = int(page_input)
+                    if 1 <= page_num <= total_pages:
+                        current_page = page_num - 1
+                    else:
+                        self.show_error(f"Page must be between 1 and {total_pages}")
+                except ValueError:
+                    self.show_error("Invalid page number")
+            elif choice in ['S', 'SEARCH']:
+                search_term = self.get_input("Enter search term: ")
+                if search_term:
+                    current_search_term = search_term
+                    search_matches = []
+                    for i, line in enumerate(lines):
+                        if search_term.lower() in line.lower():
+                            search_matches.append(i)
+                    if search_matches:
+                        current_match_index = 0
+                        current_page = search_matches[0] // lines_per_page
+                        print(f"Found {len(search_matches)} matches")
+                    else:
+                        print("No matches found")
+            elif choice == '>':
+                if search_matches:
+                    if current_match_index < len(search_matches) - 1:
+                        current_match_index += 1
+                        current_page = search_matches[current_match_index] // lines_per_page
+                else:
+                    self.show_error("No active search. Use S to search first.")
+            elif choice == '<':
+                if search_matches:
+                    if current_match_index > 0:
+                        current_match_index -= 1
+                        current_page = search_matches[current_match_index] // lines_per_page
+                else:
+                    self.show_error("No active search. Use S to search first.")
+            elif choice in ['C', 'CLEAR']:
+                current_search_term = None
+                search_matches = []
+                current_match_index = 0
+
+    def save_fetched_newsgroups(self, newsgroups):
+        """Save fetched newsgroups to the newsgroups file"""
+        self.clear_screen()
+        self.show_header()
+        print("Save Newsgroups to File")
+        print("=" * 50)
+        print()
+
+        # Get newsgroups file path from config
+        newsgroups_file = "newsgroups"
+        if self.config and self.config.has_option('Files', 'newsgrouplist'):
+            newsgroups_file = self.config.get('Files', 'newsgrouplist')
+
+        # Check if file exists and prompt for overwrite
+        if os.path.exists(newsgroups_file):
+            print(f"File already exists: {newsgroups_file}")
+            confirm = self.get_input("Overwrite existing file? (Y/N): ").upper()
+            if confirm != 'Y':
+                print("Save cancelled")
+                self.pause()
+                return
+
+            # Create backup first
+            backup_file = f"{newsgroups_file}.bak"
+            try:
+                shutil.copy2(newsgroups_file, backup_file)
+                print(f"Backup created: {backup_file}")
+            except Exception as e:
+                print(f"Warning: Could not create backup: {e}")
+
+        try:
+            with open(newsgroups_file, 'w') as f:
+                f.write(f"# Newsgroups list fetched from server on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"# Total groups: {len(newsgroups)}\n")
+                f.write("#\n")
+                for name, last_num, first_num, flag in newsgroups:
+                    f.write(f"{name}\n")
+
+            print()
+            self.show_success(f"Saved {len(newsgroups):,} newsgroups to {newsgroups_file}")
+
+        except Exception as e:
+            self.show_error(f"Failed to save newsgroups: {e}")
+
+        self.pause()
+
+    def mark_groups_read(self, newsrc_file):
+        """Mark newsgroups as read up to a specified article number"""
+        self.clear_screen()
+        self.show_header()
+        print("Mark Groups Read")
+        print("=" * 50)
+        print()
+
+        if not os.path.exists(newsrc_file):
+            self.show_error(f"Newsrc file not found: {newsrc_file}")
+            return
+
+        # Read current newsrc entries
+        try:
+            entries = {}
+            comments = []
+            with open(newsrc_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith('#'):
+                        comments.append(line)
+                        continue
+                    if ':' in line:
+                        parts = line.split(':', 1)
+                        group_name = parts[0].strip()
+                        read_range = parts[1].strip() if len(parts) > 1 else ''
+                        entries[group_name] = read_range
+        except Exception as e:
+            self.show_error(f"Error reading newsrc file: {e}")
+            return
+
+        if not entries:
+            self.show_error("No newsgroup entries found in newsrc file")
+            return
+
+        print(f"Found {len(entries)} newsgroup entries")
+        print()
+        print("1. Mark ALL groups read")
+        print("2. Mark specific group read")
+        print("Q. Cancel")
+        print()
+
+        choice = self.get_input("Select option (1-2, Q): ").upper()
+
+        if choice == 'Q':
+            return
+        elif choice == '1':
+            self.mark_all_groups_read(newsrc_file, entries, comments)
+        elif choice == '2':
+            self.mark_single_group_read(newsrc_file, entries, comments)
+        else:
+            self.show_error("Invalid selection")
+
+    def mark_all_groups_read(self, newsrc_file, entries, comments):
+        """Mark all groups as read up to specified article number"""
+        self.clear_screen()
+        self.show_header()
+        print("Mark ALL Groups Read")
+        print("=" * 50)
+        print()
+
+        print(f"This will update all {len(entries)} newsgroup entries.")
+        print()
+
+        # Ask for the article number
+        num_input = self.get_input("Enter article number to mark as read (e.g., 1-12345): ")
+        if not num_input:
+            print("Cancelled")
+            self.pause()
+            return
+
+        # Validate input format (should be like "1-12345" or just "12345")
+        read_range = num_input.strip()
+        if not read_range:
+            self.show_error("Invalid input")
+            return
+
+        # If just a number, format as "1-number"
+        if read_range.isdigit():
+            read_range = f"1-{read_range}"
+
+        print()
+        print(f"Will set all groups to: {read_range}")
+        confirm = self.get_input("Confirm? (Y/N): ").upper()
+
+        if confirm != 'Y':
+            print("Cancelled")
+            self.pause()
+            return
+
+        # Create backup first
+        backup_file = f"{newsrc_file}.bak"
+        try:
+            shutil.copy2(newsrc_file, backup_file)
+            print(f"Backup created: {backup_file}")
+        except Exception as e:
+            print(f"Warning: Could not create backup: {e}")
+
+        # Update all entries
+        try:
+            with open(newsrc_file, 'w') as f:
+                # Write comments first
+                for comment in comments:
+                    f.write(f"{comment}\n")
+
+                # Write updated entries
+                for group_name in sorted(entries.keys()):
+                    f.write(f"{group_name}: {read_range}\n")
+
+            print()
+            self.show_success(f"Marked {len(entries)} groups as read: {read_range}")
+
+        except Exception as e:
+            self.show_error(f"Failed to update newsrc file: {e}")
+
+    def mark_single_group_read(self, newsrc_file, entries, comments):
+        """Mark a specific group as read with paged group selection"""
+        sorted_groups = sorted(entries.keys())
+
+        # Build display lines
+        lines = []
+        for i, group in enumerate(sorted_groups, 1):
+            current_range = entries[group] if entries[group] else "(none)"
+            lines.append(f"{i:4d}. {group}: {current_range}")
+
+        # Get configurable page size
+        lines_per_page = 40
+        if self.config and self.config.has_option('Files', 'newsgrouppagesize'):
+            try:
+                lines_per_page = self.config.getint('Files', 'newsgrouppagesize')
+            except ValueError:
+                lines_per_page = 40
+
+        current_page = 0
+        total_pages = (len(lines) + lines_per_page - 1) // lines_per_page
+        current_search_term = None
+        search_matches = []
+        current_match_index = 0
+
+        while True:
+            self.clear_screen()
+            self.show_header()
+            print("Mark Specific Group Read - Select Group")
+            print("=" * 50)
+            print()
+
+            start_line = current_page * lines_per_page
+            end_line = min(start_line + lines_per_page, len(lines))
+
+            print(f" Total groups: {len(lines)} | Page {current_page + 1} of {total_pages} | Groups {start_line + 1}-{end_line}")
+            if current_search_term and search_matches:
+                print(f" Searching for: '{current_search_term}' | Match {current_match_index + 1} of {len(search_matches)} (> marks matches)")
+            elif current_search_term:
+                print(f" Searching for: '{current_search_term}' (> marks matches)")
+            print()
+
+            for i in range(start_line, end_line):
+                line_content = lines[i]
+                if current_search_term and current_search_term.lower() in line_content.lower():
+                    print(f"> {line_content}")
+                else:
+                    print(f"  {line_content}")
+
+            print()
+            # Navigation options
+            nav_opts = []
+            if current_page > 0:
+                nav_opts.append("P. Prev")
+            if current_page < total_pages - 1:
+                nav_opts.append("N. Next")
+            nav_opts.extend(["F. First", "L. Last", "G. Go to page", "S. Search", "Q. Cancel"])
+            print(" | ".join(nav_opts))
+            print()
+
+            choice = self.get_input("Enter group # or name (or navigation command): ").strip()
+            choice_upper = choice.upper()
+
+            if choice_upper in ['Q', 'QUIT', 'EXIT']:
+                return
+            elif choice_upper in ['N', 'NEXT']:
+                if current_page < total_pages - 1:
+                    current_page += 1
+            elif choice_upper in ['P', 'PREV', 'PREVIOUS']:
+                if current_page > 0:
+                    current_page -= 1
+            elif choice_upper in ['F', 'FIRST']:
+                current_page = 0
+            elif choice_upper in ['L', 'LAST']:
+                current_page = total_pages - 1
+            elif choice_upper in ['G', 'GOTO']:
+                page_input = self.get_input(f"Enter page number (1-{total_pages}): ")
+                try:
+                    page_num = int(page_input)
+                    if 1 <= page_num <= total_pages:
+                        current_page = page_num - 1
+                    else:
+                        self.show_error(f"Page must be between 1 and {total_pages}")
+                except ValueError:
+                    self.show_error("Invalid page number")
+            elif choice_upper in ['S', 'SEARCH']:
+                search_term = self.get_input("Enter search term: ")
+                if search_term:
+                    current_search_term = search_term
+                    search_matches = []
+                    for i, line in enumerate(lines):
+                        if search_term.lower() in line.lower():
+                            search_matches.append(i)
+                    if search_matches:
+                        current_match_index = 0
+                        current_page = search_matches[0] // lines_per_page
+                        print(f"Found {len(search_matches)} matches")
+                    else:
+                        print("No matches found")
+            elif choice_upper == '>':
+                if search_matches and current_match_index < len(search_matches) - 1:
+                    current_match_index += 1
+                    current_page = search_matches[current_match_index] // lines_per_page
+            elif choice_upper == '<':
+                if search_matches and current_match_index > 0:
+                    current_match_index -= 1
+                    current_page = search_matches[current_match_index] // lines_per_page
+            elif choice_upper in ['C', 'CLEAR']:
+                current_search_term = None
+                search_matches = []
+                current_match_index = 0
+            else:
+                # Try to interpret as group selection
+                target_group = None
+
+                if choice.isdigit():
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(sorted_groups):
+                        target_group = sorted_groups[idx]
+                    else:
+                        self.show_error(f"Invalid group number. Must be 1-{len(sorted_groups)}")
+                        continue
+                else:
+                    # Direct group name
+                    if choice in entries:
+                        target_group = choice
+                    else:
+                        # Try case-insensitive match
+                        for group in entries:
+                            if group.lower() == choice.lower():
+                                target_group = group
+                                break
+
+                if not target_group:
+                    self.show_error(f"Group not found: {choice}")
+                    continue
+
+                # Group selected - proceed to mark as read
+                self.complete_mark_group_read(newsrc_file, entries, comments, target_group)
+                return
+
+    def complete_mark_group_read(self, newsrc_file, entries, comments, target_group):
+        """Complete the mark group read operation after group selection"""
+        self.clear_screen()
+        self.show_header()
+        print("Mark Group Read")
+        print("=" * 50)
+        print()
+
+        current_range = entries[target_group] if entries[target_group] else "(none)"
+        print(f"Group: {target_group}")
+        print(f"Current read range: {current_range}")
+        print()
+
+        # Ask for the article number
+        num_input = self.get_input("Enter article number to mark as read (e.g., 1-12345): ")
+        if not num_input:
+            print("Cancelled")
+            self.pause()
+            return
+
+        # Validate input format
+        read_range = num_input.strip()
+        if not read_range:
+            self.show_error("Invalid input")
+            return
+
+        # If just a number, format as "1-number"
+        if read_range.isdigit():
+            read_range = f"1-{read_range}"
+
+        print()
+        print(f"Will set {target_group} to: {read_range}")
+        confirm = self.get_input("Confirm? (Y/N): ").upper()
+
+        if confirm != 'Y':
+            print("Cancelled")
+            self.pause()
+            return
+
+        # Create backup first
+        backup_file = f"{newsrc_file}.bak"
+        try:
+            shutil.copy2(newsrc_file, backup_file)
+            print(f"Backup created: {backup_file}")
+        except Exception as e:
+            print(f"Warning: Could not create backup: {e}")
+
+        # Update the specific entry
+        entries[target_group] = read_range
+
+        try:
+            with open(newsrc_file, 'w') as f:
+                # Write comments first
+                for comment in comments:
+                    f.write(f"{comment}\n")
+
+                # Write entries
+                for group_name in sorted(entries.keys()):
+                    f.write(f"{group_name}: {entries[group_name]}\n")
+
+            print()
+            self.show_success(f"Marked {target_group} as read: {read_range}")
+
+        except Exception as e:
+            self.show_error(f"Failed to update newsrc file: {e}")
+
     def backup_newsrc_file(self, newsrc_file):
         """Create a timestamped backup of newsrc file"""
         self.clear_screen()
@@ -1520,13 +2082,13 @@ class AdminPanel:
             return
 
         # Get low water mark
-        low_mark = self.get_input("Low water mark (default: 0): ").strip()
+        low_mark = self.get_input("Low water mark (default: 1): ").strip()
         if not low_mark:
-            low_mark = "0"
+            low_mark = "1"
 
         try:
             low_num = int(low_mark)
-            if low_num < 0:
+            if low_num < 1:
                 raise ValueError("Water mark must be non-negative")
         except ValueError:
             self.show_error("Low water mark must be a non-negative integer")
