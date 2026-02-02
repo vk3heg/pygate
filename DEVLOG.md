@@ -12,7 +12,7 @@ but can be run on a different computer as a client only.
 **Language:** Python 3.7+
 
 
-### Version 1.5.11 (February 3, 2026)
+### Version 1.5.11 (February 2, 2026)
 
 #### Admin Panel - Newsgroup Manager Enhancements
 
