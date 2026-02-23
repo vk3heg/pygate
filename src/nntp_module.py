@@ -417,19 +417,10 @@ class NNTPModule:
         if origin:
             body += f"\n\n * Origin: {origin}"
 
-        # Split body into lines and handle NNTP dot-stuffing
-        body_lines = body.split('\n')
-        for line in body_lines:
-            line = line.rstrip()
-            # Handle NNTP dot-stuffing: escape lines starting with dot
-            if line.startswith('.'):
-                if line == '.':
-                    # A lone dot is NNTP end-of-message marker, should be escaped
-                    line = '..'
-                else:
-                    # Lines starting with dot should be dot-stuffed
-                    line = '.' + line
-            lines.append(line)
+        # Split body into lines
+        # Note: dot-stuffing (RFC 3977 s3.1.1) is handled by post() at the wire level
+        for line in body.split('\n'):
+            lines.append(line.rstrip())
 
         return lines
 

@@ -96,15 +96,15 @@ class ConfigValidator:
 
         # FidoNet configuration
         if self.config.get('FidoNet', 'gateway_address', fallback=''):
-            passed.append("✓ FidoNet gateway address configured")
+            passed.append("FidoNet gateway address configured")
         else:
-            failed.append("✗ FidoNet gateway address not configured")
+            failed.append("FidoNet gateway address not configured")
 
         # NNTP configuration
         if self.config.get('NNTP', 'host', fallback=''):
-            passed.append("✓ NNTP host configured")
+            passed.append("NNTP host configured")
         else:
-            failed.append("✗ NNTP host not configured")
+            failed.append("NNTP host not configured")
 
         # Directories
         dirs_to_check = {
@@ -116,18 +116,18 @@ class ConfigValidator:
         for dir_key, dir_name in dirs_to_check.items():
             dir_path = self.config.get('Files', dir_key, fallback='')
             if dir_path and os.path.exists(dir_path):
-                passed.append(f"✓ {dir_name} exists: {dir_path}")
+                passed.append(f"{dir_name} exists: {dir_path}")
             elif dir_path:
-                failed.append(f"✗ {dir_name} not found: {dir_path}")
+                failed.append(f"{dir_name} not found: {dir_path}")
             else:
-                failed.append(f"✗ {dir_name} not configured")
+                failed.append(f"{dir_name} not configured")
 
         # Binkd configuration file
         binkd_config_path = os.path.join('config', 'binkd.config')
         if os.path.exists(binkd_config_path):
-            passed.append(f"✓ Binkd configuration found: {binkd_config_path}")
+            passed.append(f"Binkd configuration found: {binkd_config_path}")
         else:
-            failed.append(f"✗ Binkd configuration not found: {binkd_config_path}")
+            failed.append(f"Binkd configuration not found: {binkd_config_path}")
 
         # Binkd binary
         binkd_binary_linux = os.path.join('bin', 'binkd')
@@ -135,12 +135,12 @@ class ConfigValidator:
         binkd_binary_windows_alt = os.path.join('bin', 'BINKDWIN.EXE')
 
         if os.path.exists(binkd_binary_linux):
-            passed.append(f"✓ Binkd binary found: {binkd_binary_linux}")
+            passed.append(f"Binkd binary found: {binkd_binary_linux}")
         elif os.path.exists(binkd_binary_windows):
-            passed.append(f"✓ Binkd binary found: {binkd_binary_windows}")
+            passed.append(f"Binkd binary found: {binkd_binary_windows}")
         elif os.path.exists(binkd_binary_windows_alt):
-            passed.append(f"✓ Binkd binary found: {binkd_binary_windows_alt}")
+            passed.append(f"Binkd binary found: {binkd_binary_windows_alt}")
         else:
-            failed.append("✗ Binkd binary not found (looking for bin/binkd, bin/binkd.exe, or bin/BINKDWIN.EXE)")
+            failed.append("Binkd binary not found (looking for bin/binkd, bin/binkd.exe, or bin/BINKDWIN.EXE)")
 
         return passed, failed

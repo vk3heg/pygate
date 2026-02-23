@@ -8,8 +8,27 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** February 3, 2026
+**Last Updated:** February 23, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.12 (February 23, 2026)
+
+#### Double Dot-Stuffing Fix (RFC 3977 Compliance)
+Fixed a bug where lines starting with a dot in FidoNet messages had an extra dot
+added when gated to NNTP, violating RFC 3977 s3.1.1.
+
+Root cause: dot-stuffing was being applied twice:
+1. `build_nntp_article()` in `nntp_module.py` was pre-stuffing body lines
+2. `post()` in `nntp_client.py` was stuffing again at the wire level
+
+Result: a FidoNet body line `. 1` became `... 1` on the wire. INN stripped one dot
+per RFC 3977 and stored `.. 1`, so the user saw an extra leading dot on every
+dot-prefixed line.
+
+Fix: removed the dot-stuffing block from `build_nntp_article()`. Dot-stuffing is a
+wire-level transport encoding and belongs only in `post()`. Article content must
+contain literal dots; `post()` handles the protocol escaping.
 
 
 ### Version 1.5.11 (February 2, 2026)
