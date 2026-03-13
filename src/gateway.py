@@ -743,13 +743,18 @@ class Gateway:
         headers = nntp_message.get('headers', {})
         original_ftn_msgid = headers.get('x-ftn-msgid', '').strip()
 
+        nntp_message_id = nntp_message.get('message_id', '')
+
         if original_ftn_msgid:
             # Use original FidoNet MSGID to prevent duplicate detection failure
             fido_msgid = original_ftn_msgid
+            rfc_message_id = ''
             self.logger.debug(f"Using original X-FTN-MSGID: {fido_msgid}")
         else:
             # Generate new MSGID from NNTP Message-ID
-            fido_msgid = self.generate_fido_msgid(nntp_message.get('message_id', ''))
+            fido_msgid = self.generate_fido_msgid(nntp_message_id)
+            # Preserve the original NNTP Message-ID as a kludge for reference
+            rfc_message_id = nntp_message_id
 
         fido_message = {
             'area': area_tag,
@@ -762,6 +767,7 @@ class Gateway:
             'full_subject': subject if len(subject) > 71 else None,
             'origin': f"{self.config.get('FidoNet', 'origin_line')} ({gateway_address})",
             'msgid': fido_msgid,
+            'rfc_message_id': rfc_message_id,
             'reply': self.generate_fido_reply(nntp_message.get('references', '')),
             # FSC-0043.002 echomail trailer components
             'tearline': self.generate_tearline(),
@@ -819,7 +825,12 @@ class Gateway:
         return f"{fido_address} {crc32_value:08x}"
 
     def generate_fido_reply(self, references: str) -> str:
-        """Generate FidoNet REPLY from NNTP References (use only immediate parent)"""
+        """Generate FidoNet REPLY from NNTP References (use only immediate parent).
+
+        Uses the same address/CRC32 format as generate_fido_msgid() so the REPLY
+        value matches what PyGate stored as the parent message's MSGID when it was
+        gated from NNTP to FidoNet.
+        """
         import binascii
 
         if not references:
@@ -830,14 +841,11 @@ class Gateway:
         if not refs:
             return ''
 
-        # Get the last (most recent) reference
+        fido_address = self.config.get('FidoNet', 'gateway_address', fallback='0:0/0')
         parent_msgid = refs[-1].strip('<>')
-
-        # Calculate CRC32 of the parent message ID
         crc32_value = binascii.crc32(parent_msgid.encode('utf-8')) & 0xffffffff
-        crc32_hex = f"{crc32_value:08x}"
 
-        return f"<{parent_msgid}> {crc32_hex}"
+        return f"{fido_address} {crc32_value:08x}"
 
     def generate_tzutc_offset(self, message_date: datetime) -> str:
         """Generate TZUTC offset per FTS-4008.002 specification"""

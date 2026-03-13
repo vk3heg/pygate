@@ -33,6 +33,19 @@ MSGID: 3:633/10 dd3db642
 The serial remains deterministic per NNTP article (CRC32 of the message-id), or
 a uuid/time-based value when no NNTP Message-ID is available.
 
+For NNTP-originated messages, the original NNTP Message-ID is now also preserved
+in a `RFC-Message-ID` kludge line so the NNTP origin remains traceable:
+```
+^ARFC-Message-ID: <10ovp46$2juq8$1@dont-email.me>
+```
+This kludge is written by `fidonet_module.py` and populated in `gateway.py` only
+when the message did not originate from FidoNet (no X-FTN-MSGID header present).
+
+Also fixed `generate_fido_reply()` which had the same problem — it was putting
+the raw NNTP message-id in the REPLY address slot. It now uses the same
+`gateway_address CRC32(parent_msgid)` format so the REPLY value matches what
+PyGate stored as the parent's MSGID when it was originally gated.
+
 Note: messages that originated in FidoNet (identified by the X-FTN-MSGID header)
 are unaffected - their original MSGID is preserved as per the v1.5.7 fix.
 

@@ -486,6 +486,7 @@ class FidoNetModule:
                 'tzutc': message.get('tzutc', ''),
                 'replyaddr': message.get('replyaddr', ''),
                 'replyto': message.get('replyto', ''),
+                'rfc_message_id': message.get('rfc_message_id', ''),
                 'tearline': message.get('tearline', ''),
                 'seen_by': message.get('seen_by', []),
                 'path': message.get('path', [])
@@ -723,6 +724,8 @@ class FidoNetModule:
             text_lines.append(f"\x01REPLYADDR {message['replyaddr']}")
         if message.get('replyto'):
             text_lines.append(f"\x01REPLYTO {message['replyto']}")
+        if message.get('rfc_message_id'):
+            text_lines.append(f"\x01RFC-Message-ID: {message['rfc_message_id']}")
 
         # If subject was truncated, add full subject line before message body
         if message.get('full_subject'):
