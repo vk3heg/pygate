@@ -8,8 +8,33 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** February 23, 2026
+**Last Updated:** March 13, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.13 (March 13, 2026)
+
+#### FTS-0009 Compliant MSGID for NNTP-Originated Messages
+Fixed `generate_fido_msgid()` in `gateway.py` to produce a valid FidoNet return
+address in the MSGID of gated NNTP messages.
+
+Previously the MSGID used the raw NNTP Message-ID as the address part, e.g.:
+```
+MSGID: <10ovp46$2juq8$1@dont-email.me> dd3db642
+```
+This is not a valid FidoNet address, so other nodes had no usable return address
+and duplicate detection could not work correctly.
+
+Now the MSGID uses the configured `gateway_address` from `[FidoNet]` as the
+originating address, with a CRC32 of the NNTP Message-ID as the serial:
+```
+MSGID: 3:633/10 dd3db642
+```
+The serial remains deterministic per NNTP article (CRC32 of the message-id), or
+a uuid/time-based value when no NNTP Message-ID is available.
+
+Note: messages that originated in FidoNet (identified by the X-FTN-MSGID header)
+are unaffected - their original MSGID is preserved as per the v1.5.7 fix.
 
 
 ### Version 1.5.12 (February 23, 2026)

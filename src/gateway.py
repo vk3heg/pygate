@@ -795,45 +795,28 @@ class Gateway:
         return linked_address
 
     def generate_fido_msgid(self, nntp_message_id: str = '') -> str:
-        """Generate FidoNet MSGID from NNTP Message-ID or create new one"""
-        import hashlib
-        import time
+        """Generate a FTS-0009-compliant FidoNet MSGID for NNTP-originated messages.
+
+        Format: <gateway_address> <serial>
+        The gateway address is used as the originating address so other FidoNet
+        systems have a valid return address. The serial is a CRC32 of the NNTP
+        Message-ID (deterministic and unique per article) or a time/uuid-based
+        value when no NNTP Message-ID is available.
+        """
         import binascii
+        import time
+        import uuid
+
+        fido_address = self.config.get('FidoNet', 'gateway_address', fallback='0:0/0')
 
         if nntp_message_id:
-            # Use the original NNTP Message-ID and add CRC32
             message_id = nntp_message_id.strip('<>')
-
-            # Calculate CRC32 of the message ID
             crc32_value = binascii.crc32(message_id.encode('utf-8')) & 0xffffffff
-            crc32_hex = f"{crc32_value:08x}"
-
-            return f"<{message_id}> {crc32_hex}"
         else:
-            # Generate a new Message-ID in RFC format
-            import uuid
-            import socket
+            unique_str = f"{uuid.uuid4()}{time.time()}"
+            crc32_value = binascii.crc32(unique_str.encode('utf-8')) & 0xffffffff
 
-            # Try to get a reasonable hostname
-            try:
-                hostname = socket.getfqdn()
-                # Reject localhost, hostnames without dots, and IPv6 addresses
-                # IPv6 addresses contain colons which break Message-ID parsing in NNTP
-                if hostname == 'localhost' or '.' not in hostname or ':' in hostname:
-                    hostname = self.config.get('Gateway', 'domain', 'gateway.local')
-            except:
-                hostname = self.config.get('Gateway', 'domain', 'gateway.local')
-
-            # Generate unique message ID
-            unique_id = str(uuid.uuid4()).replace('-', '')[:16]
-            timestamp = f"{int(time.time()):08x}"
-            message_id = f"{unique_id}{timestamp}@{hostname}"
-
-            # Calculate CRC32
-            crc32_value = binascii.crc32(message_id.encode('utf-8')) & 0xffffffff
-            crc32_hex = f"{crc32_value:08x}"
-
-            return f"<{message_id}> {crc32_hex}"
+        return f"{fido_address} {crc32_value:08x}"
 
     def generate_fido_reply(self, references: str) -> str:
         """Generate FidoNet REPLY from NNTP References (use only immediate parent)"""

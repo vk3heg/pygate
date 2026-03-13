@@ -321,7 +321,7 @@ python bin\gate.py --dry-run   # Windows
 - **Lock file management**: Prevents overlapping executions
 - **Timeout handling**: Prevents runaway processes
 - **Pre-flight checks**: Validates configuration and directories
-- **Integrated workflow**: Import → Export → Process held → Pack → Binkd connection → Areafix
+- **Integrated workflow**: Import -> Export -> Process held -> Pack -> Binkd connection -> Areafix
 - **Statistics tracking**: Logs packet counts to `data/logs/gate_stats.log`
 - **Disk space monitoring**: Warns when space is low
 - **Log rotation**: Automatically rotates large log files with gzip compression
@@ -965,50 +965,50 @@ rm data/hold/approved/*.json
 
 ```
 pygate/
-├── pygate.py                   # Main gateway script
-├── pygate.cfg                  # Main configuration
-├── admin_panel.py              # Command-line admin interface
-├── README.md                   # This file your reading now
-├── src/                        # Python modules
-│   ├── cache/                  # Cache files
-│   │   └── __pycache__/        # Python bytecode cache
-│   ├── gateway.py              # Core gateway module
-│   ├── config_validator.py     # Configuration validation module
-│   ├── nntp_module.py          # NNTP handling
-│   ├── fidonet_module.py       # FidoNet packet processing
-│   ├── hold_module.py          # Message hold system
-│   ├── spam_filter.py          # Spam filtering
-│   ├── areafix_module.py       # Areafix processing
-│   ├── filter_manager.py       # Filter management
-│   └── nntp_client.py          # NNTP client module
-├── config/                     # Configuration files
-│   ├── newsrc                  # Areas configuration
-│   ├── filter.cfg              # Spam filter patterns
-│   ├── binkd.config            # Binkd mailer configuration
-│   ├── newsgroups              # Newsgroups list
-│   └── areafix.hlp             # Areafix help file
-├── bin/                        # Binaries and scripts
-│   ├── binkd                   # Binkd mailer binary (Linux)
-│   ├── binkdwin.exe            # Binkd mailer binary (Windows)
-│   └── gate.py                 # Automated PyGate execution script (cross-platform)
-└── data/                       # Runtime data
-    ├── logs/                   # Log files
-    │   ├── pygate.log          # PyGate operation logs
-    │   ├── gate.log            # gate.py automation logs
-    │   ├── binkd.log           # Binkd mailer logs
-    │   └── gate_stats.log      # Statistics from gate.py
-    ├── inbound/                # Incoming FidoNet packets
-    │   ├── processed/          # Processed packets
-    │   └── bad/                # Failed packets
-    ├── outbound/               # Outgoing FidoNet packets
-    ├── temp/                   # Temporary files
-    ├── secure/                 # Secure directory
-    └── hold/                   # Message hold system
-        ├── pending/            # Messages awaiting review
-        ├── approved/           # Approved messages
-        ├── rejected/           # Rejected messages
-        ├── backup/             # Backup of held messages after releasing
-        └── notifications.json  # Notification tracking
++-- pygate.py                   # Main gateway script
++-- pygate.cfg                  # Main configuration
++-- admin_panel.py              # Command-line admin interface
++-- README.md                   # This file your reading now
++-- src/                        # Python modules
+|   +-- cache/                  # Cache files
+|   |   +-- __pycache__/        # Python bytecode cache
+|   +-- gateway.py              # Core gateway module
+|   +-- config_validator.py     # Configuration validation module
+|   +-- nntp_module.py          # NNTP handling
+|   +-- fidonet_module.py       # FidoNet packet processing
+|   +-- hold_module.py          # Message hold system
+|   +-- spam_filter.py          # Spam filtering
+|   +-- areafix_module.py       # Areafix processing
+|   +-- filter_manager.py       # Filter management
+|   +-- nntp_client.py          # NNTP client module
++-- config/                     # Configuration files
+|   +-- newsrc                  # Areas configuration
+|   +-- filter.cfg              # Spam filter patterns
+|   +-- binkd.config            # Binkd mailer configuration
+|   +-- newsgroups              # Newsgroups list
+|   +-- areafix.hlp             # Areafix help file
++-- bin/                        # Binaries and scripts
+|   +-- binkd                   # Binkd mailer binary (Linux)
+|   +-- binkdwin.exe            # Binkd mailer binary (Windows)
+|   +-- gate.py                 # Automated PyGate execution script (cross-platform)
++-- data/                       # Runtime data
+    +-- logs/                   # Log files
+    |   +-- pygate.log          # PyGate operation logs
+    |   +-- gate.log            # gate.py automation logs
+    |   +-- binkd.log           # Binkd mailer logs
+    |   +-- gate_stats.log      # Statistics from gate.py
+    +-- inbound/                # Incoming FidoNet packets
+    |   +-- processed/          # Processed packets
+    |   +-- bad/                # Failed packets
+    +-- outbound/               # Outgoing FidoNet packets
+    +-- temp/                   # Temporary files
+    +-- secure/                 # Secure directory
+    +-- hold/                   # Message hold system
+        +-- pending/            # Messages awaiting review
+        +-- approved/           # Approved messages
+        +-- rejected/           # Rejected messages
+        +-- backup/             # Backup of held messages after releasing
+        +-- notifications.json  # Notification tracking
 ```
 
 ## Examples
@@ -1072,7 +1072,7 @@ echo "comp.sys.amiga: 1-1" >> config/newsrc
 ctlinnd newgroup comp.sys.amiga
 
 # 3. Sort newsrc file using admin panel
-python3 admin_panel.py  # Option 6 → Option 1
+python3 admin_panel.py  # Option 6 -> Option 1
 
 # 4. Test new area
 ./pygate.py --export
@@ -1086,7 +1086,7 @@ Manual method (client-only mode):
 echo "comp.sys.amiga: 1-1" >> config/newsrc
 
 # 3. Sort newsrc file using admin panel
-python3 admin_panel.py  # Option 6 → Option 1
+python3 admin_panel.py  # Option 6 -> Option 1
 
 # 4. Test new area
 ./pygate.py --export

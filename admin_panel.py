@@ -663,7 +663,7 @@ class AdminPanel:
         print(f"Date: {message['date']}")
         print(f"Held At: {message['held_at']}")
         print(f"Message ID: {message.get('message_id', 'N/A')}")
-        print(f"Direction: {message.get('direction', 'Unknown')} {'(FidoNet→NNTP)' if message.get('direction') == 'nntp' else '(NNTP→FidoNet)' if message.get('direction') == 'fidonet' else ''}")
+        print(f"Direction: {message.get('direction', 'Unknown')} {'(FidoNet->NNTP)' if message.get('direction') == 'nntp' else '(NNTP->FidoNet)' if message.get('direction') == 'fidonet' else ''}")
         print()
         print("Body Preview:")
         print("-" * 40)
@@ -1290,9 +1290,9 @@ class AdminPanel:
                 print(f" File: {newsgroups_file}")
                 print(f" Total lines: {len(lines):,} | Page {current_page + 1} of {total_pages} | Lines {start_line + 1}-{end_line}")
                 if current_search_term and search_matches:
-                    print(f"🔍 Searching for: '{current_search_term}' | Match {current_match_index + 1} of {len(search_matches)} (> marks matches)")
+                    print(f"[Search] Searching for: '{current_search_term}' | Match {current_match_index + 1} of {len(search_matches)} (> marks matches)")
                 elif current_search_term:
-                    print(f"🔍 Searching for: '{current_search_term}' (> marks matches)")
+                    print(f"[Search] Searching for: '{current_search_term}' (> marks matches)")
                 print()
 
                 # Display lines for current page
