@@ -721,9 +721,9 @@ class FidoNetModule:
         if message.get('tzutc'):
             text_lines.append(f"\x01TZUTC: {message['tzutc']}")
         if message.get('replyaddr'):
-            text_lines.append(f"\x01REPLYADDR {message['replyaddr']}")
+            text_lines.append(f"\x01REPLYADDR: {message['replyaddr']}")
         if message.get('replyto'):
-            text_lines.append(f"\x01REPLYTO {message['replyto']}")
+            text_lines.append(f"\x01REPLYTO: {message['replyto']}")
         if message.get('rfc_message_id'):
             text_lines.append(f"\x01RFC-Message-ID: {message['rfc_message_id']}")
 
