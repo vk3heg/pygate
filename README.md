@@ -8,6 +8,7 @@ but can be run on a different computer as a client only.
 **Author:   Stephen Walsh
 **Contact:  Please use one of these Fidonet echomail area's first. "PYTHON" or "LINUX_BBS" before email.
 **Contact:  vk3heg@gmail.com | FidoNet 3:633/280 | FSXNet 21:1/195 | Amiganet 39:901/280
+**Last Updated:** March 11, 2026
 **Based on: SoupGate by Tom Torfs
 
 ## Table of Contents
