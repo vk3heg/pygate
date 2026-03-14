@@ -4,13 +4,11 @@ PyGate Message Hold Module
 Handles holding and reviewing usenet messages from arearemap groups
 """
 
-import os
 import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-import logging
 
 
 class MessageHoldModule:

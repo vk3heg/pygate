@@ -9,7 +9,7 @@ import sys
 import logging
 import configparser
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from datetime import datetime
 
 from .nntp_module import NNTPModule
@@ -651,7 +651,7 @@ class Gateway:
                                     'high_message': high_msg
                                 }
 
-                            except ValueError as e:
+                            except ValueError:
                                 self.logger.warning(f"Invalid range format on line {line_num}: {range_part}")
                         else:
                             self.logger.warning(f"Invalid format on line {line_num}: missing '-' in range")
@@ -689,7 +689,7 @@ class Gateway:
                         high_msg = area_config.get('last_article', area_config.get('high_message', 0))
                         f.write(f"{newsgroup}: {low_msg}-{high_msg}\n")
 
-            self.logger.info(f"Updated newsrc configuration")
+            self.logger.info("Updated newsrc configuration")
             return True
 
         except Exception as e:
@@ -849,7 +849,7 @@ class Gateway:
 
     def generate_tzutc_offset(self, message_date: datetime) -> str:
         """Generate TZUTC offset per FTS-4008.002 specification"""
-        from datetime import timezone
+
 
         # If message_date is naive (no timezone), assume it's local time
         if message_date.tzinfo is None:

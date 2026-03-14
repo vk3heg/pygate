@@ -74,7 +74,7 @@ class ConfigValidator:
         elif os.path.exists(binkd_binary_windows_alt):
             self.logger.info(f"Found binkd binary: {binkd_binary_windows_alt}")
         else:
-            errors.append(f"Binkd binary not found in bin/ directory (looking for 'binkd', 'binkd.exe', or 'BINKDWIN.EXE')")
+            errors.append("Binkd binary not found in bin/ directory (looking for 'binkd', 'binkd.exe', or 'BINKDWIN.EXE')")
 
         if errors:
             for error in errors:

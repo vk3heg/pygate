@@ -19,8 +19,7 @@ from typing import Dict, List, Optional, Tuple
 import email
 import email.header
 from email.message import Message
-from datetime import datetime, timedelta
-import time
+from datetime import datetime
 import shutil
 
 # Use custom NNTP client instead of deprecated nntplib
@@ -94,7 +93,7 @@ class FilterManager:
         if self.nntp_conn:
             try:
                 self.nntp_conn.quit()
-            except:
+            except Exception:
                 pass
             self.nntp_conn = None
 
@@ -212,7 +211,7 @@ class FilterManager:
         try:
             size = shutil.get_terminal_size()
             return size.columns, size.lines
-        except:
+        except Exception:
             return 80, 24
 
     def get_message_list_page_size(self) -> int:
@@ -413,7 +412,7 @@ class FilterManager:
             with open(filter_file, 'a', encoding='utf-8') as f:
                 f.write("\n#==============================================================================\n")
                 f.write("# FILTERS ADDED BY FILTER_MANAGER\n")
-                f.write(f"# Generated from message analysis\n")
+                f.write("# Generated from message analysis\n")
                 f.write("#==============================================================================\n\n")
 
                 for field, pattern, description in filters:
@@ -442,7 +441,7 @@ class FilterManager:
 
             # Ask user for scan range to avoid missing older messages
             print(f"Newsgroup has messages {first}-{last}")
-            scan_choice = input(f"Scan all messages or limit to recent? (all/recent/custom): ").strip().lower()
+            scan_choice = input("Scan all messages or limit to recent? (all/recent/custom): ").strip().lower()
 
             if scan_choice == 'all':
                 scan_start = int(first)
@@ -482,7 +481,7 @@ class FilterManager:
                         start_date_only = start_date.date()
                         end_date_only = end_date.date()
 
-                    except Exception as e:
+                    except Exception:
                         continue
 
                     # Check if message is in our date range (date-only comparison)
@@ -503,7 +502,7 @@ class FilterManager:
 
                 except nntplib_NNTPError:
                     continue
-                except Exception as e:
+                except Exception:
                     continue
 
             messages.sort(key=lambda x: x['date'], reverse=True)
@@ -758,7 +757,7 @@ class FilterManager:
 
     def generate_bulk_filters(self, newsgroup: str, all_headers: List[Tuple[Dict, Dict]]) -> List[Tuple[str, str, str]]:
         """Generate filter rules for bulk messages."""
-        print(f"\nGenerating filter suggestions...")
+        print("\nGenerating filter suggestions...")
 
         filters = []
 
@@ -871,8 +870,6 @@ class FilterManager:
 
         elif choice == '3':
             # Block by newsgroup and date range
-            start_date = min(msg_info['date'] for _, msg_info in all_headers)
-            end_date = max(msg_info['date'] for _, msg_info in all_headers)
             filters.append(('Newsgroups', f'(?i).*{re.escape(newsgroup)}', f'Block {newsgroup} (bulk spam detected)'))
 
         return filters

@@ -4,16 +4,13 @@ PyGate NNTP Module
 Handles NNTP server communication for the gateway
 """
 
-import os
-import time
 import re
 import socket
 import email
-from email.utils import parseaddr, formataddr, parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 from email.header import decode_header
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any, Tuple
-import logging
 
 # Use custom NNTP client instead of deprecated nntplib
 from .nntp_client import (
@@ -83,7 +80,7 @@ class NNTPModule:
             try:
                 self.connection.quit()
                 self.logger.info("Disconnected from NNTP server")
-            except:
+            except Exception:
                 pass
             finally:
                 self.connection = None
@@ -457,7 +454,7 @@ class NNTPModule:
                 decoded_name = decoded_name[:35]
 
             return decoded_name
-        except:
+        except Exception:
             return 'Unknown'
 
     def decode_mime_header(self, header_value: str) -> str:
@@ -490,7 +487,7 @@ class NNTPModule:
         try:
             name, email_addr = parseaddr(from_header)
             return email_addr if email_addr else ''
-        except:
+        except Exception:
             return ''
 
     def parse_date(self, date_str: str) -> datetime:
@@ -499,7 +496,7 @@ class NNTPModule:
             if date_str:
                 return parsedate_to_datetime(date_str)
             return datetime.now(timezone.utc)
-        except:
+        except Exception:
             return datetime.now(timezone.utc)
 
     def extract_text_from_body(self, body_lines: List[str], headers: Dict[str, str]) -> str:
@@ -586,7 +583,6 @@ class NNTPModule:
 
     def convert_fido_msgid(self, fido_msgid: str) -> str:
         """Convert FidoNet MSGID to NNTP Message-ID"""
-        import re
 
         # If already in NNTP format, return as-is
         if fido_msgid.startswith('<') and fido_msgid.endswith('>'):

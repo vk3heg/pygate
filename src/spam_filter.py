@@ -6,9 +6,7 @@ Provides framework for spam filtering with pluggable filters
 
 import os
 import re
-from typing import Dict, List, Optional, Any, Callable, Tuple
-from datetime import datetime, timedelta
-import logging
+from typing import Dict, List, Any, Callable
 
 
 class SpamFilterModule:

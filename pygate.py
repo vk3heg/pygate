@@ -7,11 +7,8 @@ Main entry point for the gateway system
 """
 
 import sys
-import os
 import argparse
 import signal
-import time
-import configparser
 from pathlib import Path
 
 # Add pygate directory to path

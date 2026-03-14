@@ -5,11 +5,8 @@ Handles FidoNet areafix requests for newsgroup management
 """
 
 import os
-import re
 import subprocess
-from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
-import logging
 
 
 class AreafixModule:
@@ -575,7 +572,6 @@ class AreafixModule:
     def add_area_subscription(self, area_name: str, newsgroup: str) -> bool:
         """Add new area subscription using ctlinnd and newsrc"""
         try:
-            area_lower = area_name.lower()
             newsgroup_lower = newsgroup.lower()
             self.logger.info(f"Processing add request for area: '{area_name}' -> newsgroup: '{newsgroup_lower}'")
 
@@ -783,7 +779,7 @@ class AreafixModule:
             if '/' in address:
                 net_node = address.split(':')[-1]  # Get after zone
                 return int(net_node.split('/')[1].split('.')[0])  # Get node, ignore point
-        except:
+        except Exception:
             raise ValueError(f"Invalid gateway_address format: {address}")
         raise ValueError(f"Invalid gateway_address format: {address}")
 
@@ -797,7 +793,7 @@ class AreafixModule:
             if '/' in address:
                 net_node = address.split(':')[-1]  # Get after zone
                 return int(net_node.split('/')[0])  # Get net
-        except:
+        except Exception:
             raise ValueError(f"Invalid gateway_address format: {address}")
         raise ValueError(f"Invalid gateway_address format: {address}")
 
@@ -819,7 +815,7 @@ class AreafixModule:
             if '/' in address:
                 net_node = address.split(':')[-1]  # Get after zone
                 return int(net_node.split('/')[1].split('.')[0])  # Get node, ignore point
-        except:
+        except Exception:
             raise ValueError(f"Invalid linked_address format: {address}")
         raise ValueError(f"Invalid linked_address format: {address}")
 
@@ -833,7 +829,7 @@ class AreafixModule:
             if '/' in address:
                 net_node = address.split(':')[-1]  # Get after zone
                 return int(net_node.split('/')[0])  # Get net
-        except:
+        except Exception:
             raise ValueError(f"Invalid linked_address format: {address}")
         raise ValueError(f"Invalid linked_address format: {address}")
 

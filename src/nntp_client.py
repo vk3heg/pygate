@@ -8,9 +8,7 @@ needed by PyGate's filter manager.
 
 import socket
 import ssl
-import re
-import email
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Tuple, List, Any
 from dataclasses import dataclass
 
 
@@ -389,7 +387,7 @@ class CustomNNTPClient:
         """Close the connection"""
         try:
             resp = self._shortcmd('QUIT')
-        except:
+        except Exception:
             resp = None
 
         if self.file:

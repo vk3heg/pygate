@@ -50,7 +50,7 @@ class AdminPanel:
         try:
             size = shutil.get_terminal_size()
             return size.columns, size.lines
-        except:
+        except Exception:
             return 80, 24
 
     def get_log_viewer_page_size(self):
@@ -208,7 +208,7 @@ class AdminPanel:
         try:
             size = os.path.getsize(filepath)
             return self.format_bytes(size)
-        except:
+        except Exception:
             return "Unknown"
 
     def format_bytes(self, bytes_count: int) -> str:
@@ -220,7 +220,7 @@ class AdminPanel:
                     return f"{size:.1f}{unit}"
                 size /= 1024
             return f"{size:.1f}TB"
-        except:
+        except Exception:
             return "Unknown"
 
     def get_system_uptime(self) -> str:
@@ -262,7 +262,7 @@ class AdminPanel:
         try:
             mtime = os.path.getmtime(filepath)
             return datetime.fromtimestamp(mtime).strftime('%d-%b-%y %H:%M')
-        except:
+        except Exception:
             return "Unknown"
 
     def read_log_file_lines(self, filepath: str) -> List[str]:
@@ -1970,7 +1970,7 @@ class AdminPanel:
             shutil.copy2(newsrc_file, backup_file)
 
             file_size = os.path.getsize(backup_file)
-            print(f" Backup created successfully!")
+            print(" Backup created successfully!")
             print(f" Source: {newsrc_file}")
             print(f" Backup: {backup_file}")
             print(f" Size: {file_size} bytes")
@@ -2213,7 +2213,7 @@ class AdminPanel:
                             # Restore from backup
                             if os.path.exists(backup_file):
                                 shutil.copy2(backup_file, newsrc_file)
-                                print(f" Rolled back newsrc file from backup")
+                                print(" Rolled back newsrc file from backup")
                             else:
                                 # Manual removal
                                 entries.remove(new_entry)
@@ -2322,7 +2322,7 @@ class AdminPanel:
                                     selected_index = match_num - 1
                                     selected_entry = entries[selected_index]
                                 else:
-                                    self.show_error(f"Invalid selection")
+                                    self.show_error("Invalid selection")
                                     return
                             except ValueError:
                                 self.show_error("Invalid selection")
@@ -2336,7 +2336,7 @@ class AdminPanel:
             # Show selected entry and confirm deletion
             newsgroup_name = selected_entry.split(':')[0].strip()
             print()
-            print(f"Selected entry to delete:")
+            print("Selected entry to delete:")
             print(f"  {selected_entry}")
             print()
             print(f"  This will permanently remove '{newsgroup_name}' from the newsrc file")
@@ -2400,7 +2400,7 @@ class AdminPanel:
                         # Restore from backup
                         if os.path.exists(backup_file):
                             shutil.copy2(backup_file, newsrc_file)
-                            print(f" Restored newsrc file from backup")
+                            print(" Restored newsrc file from backup")
                         else:
                             # Manual re-addition
                             entries.insert(selected_index, selected_entry)

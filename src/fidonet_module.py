@@ -49,7 +49,7 @@ class FidoNetModule:
                 # Read packet header (58 bytes)
                 header_data = f.read(58)
                 if len(header_data) < 58:
-                    self.logger.error(f"File too small for packet header")
+                    self.logger.error("File too small for packet header")
                     return messages
 
                 self.logger.debug(f"Read {len(header_data)} header bytes")
