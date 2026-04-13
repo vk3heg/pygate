@@ -8,8 +8,44 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** March 13, 2026
+**Last Updated:** April 13, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.14 (April 13, 2026)
+
+#### Spam Filter: From Header Bare-Name Fix
+
+Fixed `extract_name_from_email()` in `src/nntp_module.py` so that `From:` headers
+containing only a display name with no email address are handled correctly.
+
+Previously, `parseaddr()` on a bare name like `From: forecast` returned an empty
+`name` and set `email_addr` to the bare string. The fallback then returned
+`'Unknown'` (because there was no `@`), so `from_name` was always `'Unknown'` for
+these senders. Any `^From:` filter pattern targeting the actual name never matched.
+
+Now the fallback returns the bare string as-is when no `@` is present:
+```python
+# Before
+decoded_name = email_addr.split('@')[0] if '@' in email_addr else 'Unknown'
+# After
+decoded_name = email_addr.split('@')[0] if '@' in email_addr else (email_addr or 'Unknown')
+```
+
+#### Spam Filter: TraderSuccess.com Stock Trading Campaign
+
+Added a dedicated filter section in `config/filter.cfg` for a recurring stock
+trading spam campaign that posts under `From: forecast` via UsenetExpress. The
+campaign rotates subject lines to evade simple filters; added patterns covering
+the observed variants:
+
+- `^Subject:(?i).*tradersuccess` — explicit site reference in subject
+- `^Subject:.*【` — Unicode fullwidth bracket used in 4/5 observed messages
+- `^Subject:(?i).*\bAI\s+CANNOT\b` — variant subject phrase
+- `^Subject:(?i).*\bUncanny\s+Forecasts\b` — variant subject phrase
+
+The pre-existing `^From:(?i)^forecast$` rule now works correctly following the
+`extract_name_from_email` fix above.
 
 
 ### Version 1.5.13 (March 13, 2026)

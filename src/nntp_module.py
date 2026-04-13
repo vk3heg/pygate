@@ -447,7 +447,7 @@ class NNTPModule:
             if name:
                 decoded_name = self.decode_mime_header(name)
             else:
-                decoded_name = email_addr.split('@')[0] if '@' in email_addr else 'Unknown'
+                decoded_name = email_addr.split('@')[0] if '@' in email_addr else (email_addr or 'Unknown')
 
             # Truncate to fit FIDONET fromUserName field (35 chars + null terminator)
             if len(decoded_name) > 35:
