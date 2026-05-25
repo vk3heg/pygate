@@ -316,6 +316,8 @@ class NNTPModule:
                 'newsgroup': newsgroup,
                 'article_num': article_num,
                 'from_name': self.extract_name_from_email(headers.get('from', 'Unknown')),
+                # TK ADD
+                'to_name': self.extract_name_from_email(headers.get('x-comment-to', 'Unknown')),
                 'from_email': self.extract_email_from_header(headers.get('from', '')),
                 'subject': self.decode_and_truncate_subject(headers.get('subject', '')),
                 'date': self.parse_date(headers.get('date', '')),
@@ -338,15 +340,21 @@ class NNTPModule:
         # Required headers
         from_email = self.config.get('Mapping', 'gate_email')
         from_name = message.get('from_name', 'Unknown')
+        # TK ADD:
+        to_name = message.get('to_name', 'Unknown')
 
         lines.append(f"From: {from_name} <{from_email}>")
         lines.append(f"Newsgroups: {newsgroup}")
         lines.append(f"Subject: {message.get('subject', '')}")
+        # TK ADD:
+        lines.append(f"X-Comment-To: {to_name}")
 
         # MIME headers with charset from FidoNet CHRS kludge
         mime_charset = self.fido_charset_to_mime(message.get('chrs', ''))
         lines.append("MIME-Version: 1.0")
         lines.append(f"Content-Type: text/plain; charset={mime_charset}")
+        # TK ADD:
+        lines.append(f"Content-Transfer-Encoding: 8bit")
 
         # Handle datetime - may be datetime object or ISO string (from hold system)
         msg_datetime = message.get('datetime', datetime.now())
@@ -360,7 +368,7 @@ class NNTPModule:
                 msg_datetime = datetime.now()
 
         lines.append(f"Date: {self.format_date(msg_datetime)}")
-        lines.append(f"Organization: {self.config.get('FidoNet', 'origin_line')}")
+        lines.append(f"X-Organization: {self.config.get('FidoNet', 'origin_line')}")
 
         # Sender header - identifies the actual posting agent (gateway)
         gate_email = self.config.get('Mapping', 'gate_email', fallback=f'pygate@{self.get_message_id_domain()}')
@@ -448,7 +456,6 @@ class NNTPModule:
                 decoded_name = self.decode_mime_header(name)
             else:
                 decoded_name = email_addr.split('@')[0] if '@' in email_addr else (email_addr or 'Unknown')
-
             # Truncate to fit FIDONET fromUserName field (35 chars + null terminator)
             if len(decoded_name) > 35:
                 decoded_name = decoded_name[:35]

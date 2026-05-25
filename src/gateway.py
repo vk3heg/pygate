@@ -743,6 +743,11 @@ class Gateway:
         headers = nntp_message.get('headers', {})
         original_ftn_msgid = headers.get('x-ftn-msgid', '').strip()
 
+        # TK ADD x_comment_to,  user_agent and newsreader
+        x_comment_to = headers.get('x-comment-to', 'Unknown').strip()
+        user_agent = headers.get('user-agent', '').strip()
+        newsreader = headers.get('x-newsreader', '').strip()
+
         nntp_message_id = nntp_message.get('message_id', '')
 
         if original_ftn_msgid:
@@ -759,7 +764,9 @@ class Gateway:
         fido_message = {
             'area': area_tag,
             'from_name': nntp_message.get('from_name', 'Unknown'),
-            'to_name': area_config.get('default_to', 'All'),
+            # TK to_name change:
+            #'to_name': area_config.get('default_to', 'All'),
+            'to_name': x_comment_to,
             'subject': subject,
             'datetime': message_date,
             'text': message_body,
@@ -773,6 +780,9 @@ class Gateway:
             'tearline': self.generate_tearline(),
             'pid': f"PyGate {self.config.get('Gateway', 'version')}",
             'tid': self.generate_tid(),
+            # TK ADD NOTE and NEWSREADER
+            'note': user_agent,
+            'newsreader': newsreader,
             # Additional kludges for compatibility
             'chrs': self.determine_best_charset(nntp_message.get('subject', '') + ' ' + nntp_message.get('body', '')),
             'tzutc': self.generate_tzutc_offset(message_date),
@@ -1081,12 +1091,16 @@ class Gateway:
 
         # Convert text content to UTF-8 for NNTP
         from_name = self.convert_text_encoding(fido_message.get('from_name', 'Unknown'), source_encoding, 'utf-8')
+        # TK ADD to_name:
+        to_name = self.convert_text_encoding(fido_message.get('to_name', 'Unknown'), source_encoding, 'utf-8')
         subject = self.convert_text_encoding(fido_message.get('subject', ''), source_encoding, 'utf-8')
         body = self.convert_text_encoding(fido_message.get('text', ''), source_encoding, 'utf-8')
 
         nntp_message = {
             'newsgroup': area_config.get('newsgroup', ''),
             'from_name': from_name,
+            # TK ADD to_name:
+            'to_name': to_name,
             'subject': subject,
             'datetime': message_date,  # build_nntp_article expects 'datetime'
             'text': body,              # build_nntp_article expects 'text'

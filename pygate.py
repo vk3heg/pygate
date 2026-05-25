@@ -19,7 +19,7 @@ from src.config_validator import ConfigValidator
 
 # Version string - this is the authoritative version for PyGate
 # This overrides any version setting in the config file
-__version__ = '1.5.14'
+__version__ = '1.5.15'
 
 
 def signal_handler(signum, frame):

@@ -8,8 +8,59 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** April 13, 2026
+**Last Updated:** May 25, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.15 (May 25, 2026)
+
+Merged a set of changes contributed by a fellow sysop (marked with `# TK`
+comments in the source) that preserve FidoNet "To" and reader information across
+the gateway in both directions, plus related header adjustments.
+
+#### To/From Name Round-Trip via X-Comment-To
+
+The FidoNet "To" name is now carried across the gateway using the `X-Comment-To`
+NNTP header.
+
+Changes in `src/nntp_module.py`:
+- Inbound articles now capture `X-Comment-To` into the message `to_name`.
+- `build_nntp_article()` now emits an `X-Comment-To:` header carrying the FidoNet
+  recipient name.
+
+Changes in `src/gateway.py`:
+- NNTP -> FidoNet (`convert_nntp_to_fido`) sets the FidoNet `to_name` from the
+  NNTP `X-Comment-To` header (falls back to `Unknown`). The previous behaviour of
+  always using the area `default_to` ("All") is retained as a commented-out line.
+  This suits a full-feed configuration where Usenet posts are normally addressed
+  to "All".
+- FidoNet -> NNTP (`convert_fido_to_nntp`) now passes `to_name` through so the
+  `X-Comment-To` header can be populated.
+
+#### Reader / Tosser Kludges (NOTE / NEWSREADER)
+
+When gating NNTP -> FidoNet, the posting agent information is now preserved as
+FidoNet kludge lines:
+- NNTP `User-Agent` -> `\x01NOTE:` kludge
+- NNTP `X-Newsreader` -> `\x01NEWSREADER:` kludge
+
+Changes in `src/gateway.py` populate `note` (from `User-Agent`) and `newsreader`
+(from `X-Newsreader`); `src/fidonet_module.py` preserves and writes both kludges.
+
+Note: a copy/paste bug in the contributed code wrote the `newsreader` value under
+a second `\x01NOTE:` label; this was corrected to `\x01NEWSREADER:` during the
+merge so the two fields produce distinct kludges.
+
+#### Header Adjustments (FidoNet -> NNTP)
+
+In `build_nntp_article()` (`src/nntp_module.py`):
+- Added `Content-Transfer-Encoding: 8bit`.
+- The FidoNet origin line is now emitted as `X-Organization:` instead of the
+  standard `Organization:` header.
+
+In `src/fidonet_module.py`, the tear line is now written as a bare `---` when the
+supplied tear line does not already start with `---` (previously the PyGate
+software identifier was appended after the dashes).
 
 
 ### Version 1.5.14 (April 13, 2026)

@@ -482,6 +482,9 @@ class FidoNetModule:
                 # Preserve kludge fields
                 'pid': message.get('pid', ''),
                 'tid': message.get('tid', ''),
+                # TK ADD NOTE and NEWSREADER
+                'note': message.get('note', ''),
+                'newsreader': message.get('newsreader', ''),
                 'chrs': message.get('chrs', ''),
                 'tzutc': message.get('tzutc', ''),
                 'replyaddr': message.get('replyaddr', ''),
@@ -716,6 +719,11 @@ class FidoNetModule:
             text_lines.append(f"\x01PID: {message['pid']}")
         if message.get('tid'):
             text_lines.append(f"\x01TID: {message['tid']}")
+        # TK ADD NOTE and NEWSREADER
+        if message.get('note'):
+            text_lines.append(f"\x01NOTE: {message['note']}")
+        if message.get('newsreader'):
+            text_lines.append(f"\x01NEWSREADER: {message['newsreader']}")
         if message.get('chrs'):
             text_lines.append(f"\x01CHRS: {message['chrs']}")
         if message.get('tzutc'):
@@ -748,7 +756,7 @@ class FidoNetModule:
             # 1. Tear line
             tear_line = message.get('tearline', self.generate_tearline())
             if not tear_line.startswith('---'):
-                tear_line = f"--- {tear_line}"
+                tear_line = f"---"
             text_lines.append(tear_line)
 
             # 2. Origin line (note the leading space before *)
