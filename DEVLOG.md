@@ -29,13 +29,14 @@ Changes in `src/nntp_module.py`:
   recipient name.
 
 Changes in `src/gateway.py`:
-- NNTP -> FidoNet (`convert_nntp_to_fido`) sets the FidoNet `to_name` from the
-  NNTP `X-Comment-To` header (falls back to `Unknown`). The previous behaviour of
-  always using the area `default_to` ("All") is retained as a commented-out line.
-  This suits a full-feed configuration where Usenet posts are normally addressed
-  to "All".
 - FidoNet -> NNTP (`convert_fido_to_nntp`) now passes `to_name` through so the
   `X-Comment-To` header can be populated.
+
+NNTP -> FidoNet direction: the contributed code set the FidoNet `to_name` from
+the NNTP `X-Comment-To` header (falling back to `Unknown`). This was reverted so
+`convert_nntp_to_fido` again addresses gated Usenet posts to the area
+`default_to` ("All"), matching the long-standing behaviour where Usenet articles
+are always addressed to "All".
 
 #### Reader / Tosser Kludges (NOTE / NEWSREADER)
 
@@ -58,9 +59,10 @@ In `build_nntp_article()` (`src/nntp_module.py`):
 - The FidoNet origin line is now emitted as `X-Organization:` instead of the
   standard `Organization:` header.
 
-In `src/fidonet_module.py`, the tear line is now written as a bare `---` when the
-supplied tear line does not already start with `---` (previously the PyGate
-software identifier was appended after the dashes).
+In `src/fidonet_module.py`, the contributed code wrote the tear line as a bare
+`---`. This was reverted to keep the PyGate software identifier (e.g.
+`--- PyGate Linux v1.5.15`). `generate_tearline()` now sources the version from
+`pygate.__version__` first, falling back to the `[Gateway] version` config value.
 
 
 ### Version 1.5.14 (April 13, 2026)

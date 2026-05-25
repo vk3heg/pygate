@@ -743,7 +743,6 @@ class Gateway:
         headers = nntp_message.get('headers', {})
         original_ftn_msgid = headers.get('x-ftn-msgid', '').strip()
 
-        x_comment_to = headers.get('x-comment-to', 'Unknown').strip()
         user_agent = headers.get('user-agent', '').strip()
         newsreader = headers.get('x-newsreader', '').strip()
 
@@ -763,7 +762,7 @@ class Gateway:
         fido_message = {
             'area': area_tag,
             'from_name': nntp_message.get('from_name', 'Unknown'),
-            'to_name': x_comment_to,
+            'to_name': area_config.get('default_to', 'All'),
             'subject': subject,
             'datetime': message_date,
             'text': message_body,
