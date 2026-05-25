@@ -11,7 +11,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/*
+!lib/install_lib.sh
 lib64/
 parts/
 sdist/
@@ -20,7 +21,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+TODO.md
+CLAUDE.MD
 .gitignore
+cl-pygate.txt
 
 # PyInstaller
 *.manifest
@@ -70,5 +74,3 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
-CLAUDE.md
-cl-pygate.txt
