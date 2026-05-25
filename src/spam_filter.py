@@ -208,7 +208,7 @@ class SpamFilterModule:
         return self._check_header_patterns(message, 'From', 'from_name')
 
     def origin_filter(self, message: Dict[str, Any]) -> bool:
-        """Filter based on FidoNet Origin line patterns
+        r"""Filter based on FidoNet Origin line patterns
 
         The origin line contains the BBS name and FidoNet address, e.g.:
         * Origin: My BBS Name (1:135/250)

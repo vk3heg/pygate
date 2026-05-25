@@ -26,8 +26,13 @@ class FidoNetModule:
         """Generate tear line with OS and version info"""
         import platform
 
-        # Get PyGate version from config
-        version = self.config.get('Gateway', 'version')
+        # Get PyGate version from the authoritative pygate module,
+        # falling back to the config file if it is unavailable
+        try:
+            import pygate
+            version = pygate.__version__
+        except (ImportError, AttributeError):
+            version = self.config.get('Gateway', 'version')
 
         # Get operating system
         os_name = platform.system()
@@ -756,7 +761,7 @@ class FidoNetModule:
             # 1. Tear line
             tear_line = message.get('tearline', self.generate_tearline())
             if not tear_line.startswith('---'):
-                tear_line = f"---"
+                tear_line = f"--- {tear_line}"
             text_lines.append(tear_line)
 
             # 2. Origin line (note the leading space before *)
