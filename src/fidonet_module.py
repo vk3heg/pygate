@@ -487,7 +487,6 @@ class FidoNetModule:
                 # Preserve kludge fields
                 'pid': message.get('pid', ''),
                 'tid': message.get('tid', ''),
-                # TK ADD NOTE and NEWSREADER
                 'note': message.get('note', ''),
                 'newsreader': message.get('newsreader', ''),
                 'chrs': message.get('chrs', ''),
@@ -724,7 +723,6 @@ class FidoNetModule:
             text_lines.append(f"\x01PID: {message['pid']}")
         if message.get('tid'):
             text_lines.append(f"\x01TID: {message['tid']}")
-        # TK ADD NOTE and NEWSREADER
         if message.get('note'):
             text_lines.append(f"\x01NOTE: {message['note']}")
         if message.get('newsreader'):

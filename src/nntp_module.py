@@ -316,7 +316,6 @@ class NNTPModule:
                 'newsgroup': newsgroup,
                 'article_num': article_num,
                 'from_name': self.extract_name_from_email(headers.get('from', 'Unknown')),
-                # TK ADD
                 'to_name': self.extract_name_from_email(headers.get('x-comment-to', 'Unknown')),
                 'from_email': self.extract_email_from_header(headers.get('from', '')),
                 'subject': self.decode_and_truncate_subject(headers.get('subject', '')),
@@ -340,20 +339,17 @@ class NNTPModule:
         # Required headers
         from_email = self.config.get('Mapping', 'gate_email')
         from_name = message.get('from_name', 'Unknown')
-        # TK ADD:
         to_name = message.get('to_name', 'Unknown')
 
         lines.append(f"From: {from_name} <{from_email}>")
         lines.append(f"Newsgroups: {newsgroup}")
         lines.append(f"Subject: {message.get('subject', '')}")
-        # TK ADD:
         lines.append(f"X-Comment-To: {to_name}")
 
         # MIME headers with charset from FidoNet CHRS kludge
         mime_charset = self.fido_charset_to_mime(message.get('chrs', ''))
         lines.append("MIME-Version: 1.0")
         lines.append(f"Content-Type: text/plain; charset={mime_charset}")
-        # TK ADD:
         lines.append(f"Content-Transfer-Encoding: 8bit")
 
         # Handle datetime - may be datetime object or ISO string (from hold system)
