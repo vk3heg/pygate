@@ -851,6 +851,10 @@ class Gateway:
             'path': [self.fidonet.format_address_for_seenby(gateway_address)]
         }
 
+        extra_seenby = self.get_arearemap_seenby(area_tag)
+        if extra_seenby:
+            fido_message['seen_by'].append(extra_seenby)
+
         return fido_message
 
     def get_linked_address(self) -> str:
