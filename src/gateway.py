@@ -654,6 +654,8 @@ class Gateway:
         if self.config.has_section('Arearemap'):
             try:
                 for fido_area, mapped_newsgroup in self.config.items('Arearemap'):
+                    if fido_area.lower() == 'addseenby':
+                        continue
                     if mapped_newsgroup == newsgroup:
                         return fido_area.upper()
             except Exception as e:
