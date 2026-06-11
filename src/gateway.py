@@ -5,6 +5,7 @@ Handles the main gateway operations between FidoNet and NNTP
 """
 
 import os
+import re
 import sys
 import logging
 import configparser
@@ -594,6 +595,58 @@ class Gateway:
         except Exception as e:
             self.logger.error(f"Error processing approved NNTP messages: {e}")
             return False
+
+    # Regex matches "zone:net/node[.point][@domain]" (FidoNet 4D address).
+    _ADDSEENBY_RE = re.compile(r'^\d+:\d+/\d+(\.\d+)?(@\S+)?$')
+
+    def _build_arearemap_seenby_cache(self):
+        """Resolve [Arearemap] AddSeenBy once.
+
+        Returns (formatted_address_or_None, set_of_area_keys_lowercase).
+        Logs a warning once if AddSeenBy is set but malformed.
+        """
+        if not self.config.has_section('Arearemap'):
+            return None, set()
+
+        addr_raw = ''
+        area_keys = set()
+        try:
+            for key, value in self.config.items('Arearemap'):
+                if key.lower() == 'addseenby':
+                    addr_raw = (value or '').strip()
+                else:
+                    area_keys.add(key.lower())
+        except Exception as e:
+            self.logger.error(f"Error reading Arearemap section: {e}")
+            return None, set()
+
+        if not addr_raw:
+            return None, area_keys
+
+        if not self._ADDSEENBY_RE.match(addr_raw):
+            self.logger.warning(
+                f"[Arearemap] AddSeenBy value '{addr_raw}' is not a valid "
+                f"FidoNet address (expected zone:net/node[.point]); "
+                f"SEEN-BY will not be modified"
+            )
+            return None, area_keys
+
+        formatted = self.fidonet.format_address_for_seenby(addr_raw)
+        return formatted, area_keys
+
+    def get_arearemap_seenby(self, area_tag: str):
+        """Return formatted SEEN-BY address to append for ``area_tag``, or None.
+
+        Honors the optional ``AddSeenBy`` keyword in ``[Arearemap]``.
+        Returns None if AddSeenBy is unset/invalid, or if ``area_tag`` is
+        not listed as an area in ``[Arearemap]``.
+        """
+        if not hasattr(self, '_arearemap_seenby_cache'):
+            self._arearemap_seenby_cache = self._build_arearemap_seenby_cache()
+        formatted, area_keys = self._arearemap_seenby_cache
+        if formatted and area_tag.lower() in area_keys:
+            return formatted
+        return None
 
     def get_area_name_for_newsgroup(self, newsgroup: str) -> str:
         """Get FidoNet area name for newsgroup, checking [Arearemap] section first"""
