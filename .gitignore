@@ -25,6 +25,7 @@ TODO.md
 CLAUDE.md
 .gitignore
 cl-pygate.txt
+docs/
 
 # PyInstaller
 *.manifest
