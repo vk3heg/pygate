@@ -13,40 +13,6 @@ but can be run on a different computer as a client only.
 **Language:** Python 3.7+
 
 
-### Version 1.5.16 (June 11, 2026)
-
-#### [Arearemap] AddSeenBy
-
-Added an optional `AddSeenBy` keyword to the `[Arearemap]` section. When
-set, the configured FidoNet address is appended to the SEEN-BY line of
-messages gated NNTP -> FidoNet, but only for areas explicitly listed in
-`[Arearemap]`. Areas that fall back to the default newsgroup mapping are
-unaffected.
-
-Configuration:
-
-```
-[Arearemap]
-AddSeenBy = 1:135/250
-GENERAL = comp.misc
-LINUX = comp.os.linux
-```
-
-Implementation notes:
-
-- A new `Gateway.get_arearemap_seenby(area_tag)` helper resolves and
-  caches the configured address, formats it via
-  `format_address_for_seenby`, and returns it only when `area_tag` is
-  listed in `[Arearemap]`.
-- `get_area_name_for_newsgroup()` skips the `AddSeenBy` key when
-  iterating, so it is never treated as a (FidoNet area -> newsgroup)
-  mapping.
-- Malformed `AddSeenBy` values are logged once at WARNING and ignored.
-- No deduplication: if the configured address equals `gateway_address`
-  or `linked_address`, it will appear twice on SEEN-BY.
-- Only the NNTP -> FidoNet direction is affected.
-
-
 ### Version 1.5.15 (May 25, 2026)
 
 Merged a set of changes contributed by a fellow sysop (marked with `# TK`

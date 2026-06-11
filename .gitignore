@@ -22,7 +22,7 @@ wheels/
 .installed.cfg
 *.egg
 TODO.md
-CLAUDE.MD
+CLAUDE.md
 .gitignore
 cl-pygate.txt
 
