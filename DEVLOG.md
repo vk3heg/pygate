@@ -1,5 +1,6 @@
 # Pygate Development Log
-# Version prio to 1.5.6 did'nt have a devlog
+#
+# Versions prio to 1.5.6 did'nt have a devlog
 #
 
 PyGate - Python FidoNet-NNTP Gateway
@@ -8,8 +9,42 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** May 25, 2026
+**Last Updated:** June 11, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.16 (June 11, 2026)
+
+#### [Arearemap] AddSeenBy
+
+Added an optional `AddSeenBy` keyword to the `[Arearemap]` section. When
+set, the configured FidoNet address is appended to the SEEN-BY line of
+messages gated NNTP -> FidoNet, but only for areas explicitly listed in
+`[Arearemap]`. Areas that fall back to the default newsgroup mapping are
+unaffected.
+
+Configuration:
+
+```
+[Arearemap]
+AddSeenBy = 1:135/250
+GENERAL = comp.misc
+LINUX = comp.os.linux
+```
+
+Implementation notes:
+
+- A new `Gateway.get_arearemap_seenby(area_tag)` helper resolves and
+  caches the configured address, formats it via
+  `format_address_for_seenby`, and returns it only when `area_tag` is
+  listed in `[Arearemap]`.
+- `get_area_name_for_newsgroup()` skips the `AddSeenBy` key when
+  iterating, so it is never treated as a (FidoNet area -> newsgroup)
+  mapping.
+- Malformed `AddSeenBy` values are logged once at WARNING and ignored.
+- No deduplication: if the configured address equals `gateway_address`
+  or `linked_address`, it will appear twice on SEEN-BY.
+- Only the NNTP -> FidoNet direction is affected.
 
 
 ### Version 1.5.15 (May 25, 2026)
