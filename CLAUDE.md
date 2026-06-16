@@ -75,7 +75,6 @@ See `pygate-sample.cfg` for all options with comments.
 ## Notable Fixes (Recent)
 
 - v1.5.17: INTL kludge for netmail hold notifications - write_message() now treats area='NETMAIL' as netmail (skips AREA: body line, emits INTL/FMPT/TOPT kludges per FTS-0001)
-- v1.5.16: [Arearemap] AddSeenBy keyword - appends a single FidoNet address to the SEEN-BY line of NNTP->FidoNet messages, but only for areas listed in [Arearemap]
 - v1.5.15: TK-contributed merge - X-Comment-To header round-trip (FidoNet->NNTP only; NNTP->FidoNet still addresses to area default_to "All"), NOTE/NEWSREADER kludges from User-Agent/X-Newsreader, X-Organization, Content-Transfer-Encoding: 8bit; tear line keeps PyGate identifier with version sourced from pygate.__version__
 - v1.5.14: From-header bare-name fix in extract_name_from_email (handles display-name-only From: headers so ^From: filter patterns match)
 - v1.5.13: FTS-0009 compliant MSGID for NNTP-originated messages (uses gateway_address + CRC32 of NNTP Message-ID; RFC-Message-ID kludge preserves NNTP origin)
@@ -86,16 +85,14 @@ See `pygate-sample.cfg` for all options with comments.
 - v1.5.7: X-FTN-MSGID round-trip preservation
 - v1.5.6: Multi-message packet parsing fix (null terminator vs empty line)
 
-## DON'T USE
+## CHARACTER RESTRICTIONS
 
-Don't use Emoji's in ANY code or documentation
+Use plain ASCII only in ALL code, config files, and documentation.
+Do NOT use any non-ASCII Unicode characters. This includes emoji, Unicode
+symbols, and typographic characters that look harmless but are not ASCII.
 
-FORBIDDEN - NEVER USE EMOJI's SUCH AS THESE:
-(no)
-(yes)
-(ok)
-(no)
--
-v
-<-
-
+Use plain ASCII alternatives:
+- Dashes: use hyphen-minus ( - ) not em dash
+- Arrows: use -> or <- not Unicode arrows
+- Tick/cross: write (ok) or (fail) or [x] in plain text
+- No emoji of any kind
