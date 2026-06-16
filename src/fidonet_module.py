@@ -687,13 +687,17 @@ class FidoNetModule:
         # Build message text according to FSC-0043.002
         text_lines = []
 
+        # Netmail is identified by an empty area or the conventional 'NETMAIL'
+        # tag; everything else is echomail.
+        is_netmail = (message.get('area', '') or '').upper() in ('', 'NETMAIL')
+
         # For echomail: AREA: line must be first non-^a line
-        if message.get('area'):
+        if not is_netmail:
             text_lines.append(f"AREA:{message['area']}")
 
         # Add kludges (^a control lines)
         # For netmail: Add INTL, FMPT, TOPT kludges (FTS-0001, FSC-0039)
-        if not message.get('area'):  # Netmail only
+        if is_netmail:
             # INTL format: ^aINTL <dest_zone>:<dest_net>/<dest_node> <orig_zone>:<orig_net>/<orig_node>
             dest_zone = message.get('dest_zone', 0)
             dest_net = message.get('dest_net', 0)

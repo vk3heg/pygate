@@ -9,8 +9,32 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** June 11, 2026
+**Last Updated:** June 16, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.17 (June 16, 2026)
+
+#### INTL Kludge for Netmail Hold Notifications
+
+Fixed missing `\x01INTL` kludge (and a spurious `AREA:NETMAIL` body line)
+on the hold-queue notification netmail produced by `src/hold_module.py`.
+hpt reported the symptom as:
+
+```
+Mail without INTL-Kludge. Assuming 3:633/10.0 -> 3:633/280.0
+```
+
+Root cause: `write_message()` in `src/fidonet_module.py` chose the
+netmail vs. echomail code path with `if not message.get('area')`. The
+hold notification passes `area='NETMAIL'` (the conventional FTN tag for
+the netmail area), so the message took the echomail path - emitting an
+`AREA:NETMAIL` first body line and skipping the netmail-only INTL/FMPT/
+TOPT kludges (FTS-0001, FSC-0039).
+
+Fix: `write_message()` now treats the message as netmail when `area` is
+empty *or* equals `NETMAIL` (case-insensitive). Areafix replies already
+use `area=''` and are unaffected.
 
 
 ### Version 1.5.15 (May 25, 2026)
