@@ -657,9 +657,10 @@ class Gateway:
         # Check for explicit mapping in [Arearemap] section
         if self.config.has_section('Arearemap'):
             try:
-                for fido_area, mapped_newsgroup in self.config.items('Arearemap'):
-                    if fido_area.lower() == 'addseenby':
-                        continue
+                for fido_area, mapped_value in self.config.items('Arearemap'):
+                    # Strip the optional '| addr1, addr2' suffix; only the
+                    # newsgroup name is used for the lookup.
+                    mapped_newsgroup = mapped_value.split('|', 1)[0].strip()
                     if mapped_newsgroup == newsgroup:
                         return fido_area.upper()
             except Exception as e:
