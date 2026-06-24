@@ -42,8 +42,9 @@ class MessageHoldModule:
         # Check if area_tag is mapped in arearemap
         try:
             arearemap_areas = dict(self.config.items('Arearemap'))
-            # Remove the 'hold' setting from the check
+            # Remove the non-area config keys that live in [Arearemap]
             arearemap_areas.pop('hold', None)
+            arearemap_areas.pop('notify_sysop', None)
 
             # Check if this area tag exists in arearemap
             area_tag_upper = area_tag.upper()

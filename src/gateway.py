@@ -856,8 +856,7 @@ class Gateway:
             'path': [self.fidonet.format_address_for_seenby(gateway_address)]
         }
 
-        for addr in self.get_arearemap_seenby(area_tag):
-            fido_message['seen_by'].append(addr)
+        fido_message['seen_by'].extend(self.get_arearemap_seenby(area_tag))
 
         return fido_message
 
