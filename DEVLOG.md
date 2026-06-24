@@ -15,45 +15,11 @@ but can be run on a different computer as a client only.
 
 ### Version 1.5.18 (June 24, 2026)
 
-#### [Arearemap] Per-Area AddSeenBy
+#### [Bug Fix] Notify Sysop bug
 
-The v1.5.16 `AddSeenBy = ADDR` global keyword in `[Arearemap]` is
-replaced by a per-area inline syntax: append `| ADDR` (or
-`| ADDR1, ADDR2, ...`) to any area mapping line to add those FidoNet
-addresses to the SEEN-BY line of NNTP -> FidoNet gated messages for
-that area only.
-
-Syntax:
-
-```
-[Arearemap]
-MYSTIC    = alt.bbs.mystic | 2:250/1, 3:633/10
-RBERRYPI  = comp.sys.raspberry-pi | 1:135/250
-CBM       = comp.sys.cbm
-```
-
-Rules:
-
-- No `|` (or empty `|`) on an area line -> nothing added to SEEN-BY.
-- Multiple addresses are comma-separated; whitespace is tolerated.
-- Each address must be a valid 4D FidoNet address
-  (`zone:net/node[.point][@domain]`); invalid entries are dropped from
-  the list with a WARNING and the rest still apply.
-- Direction is NNTP -> FidoNet only (unchanged from v1.5.16).
-
-Cross-module update: `src/nntp_module.py:get_newsgroup_for_area` and
-`src/areafix_module.py:{get_available_newsgroups, newsgroup_to_area_name}`
-were also updated to strip the optional `| ADDR` suffix when reading
-`[Arearemap]`. Without this, an area whose line uses the new syntax
-would have its raw value (including the address list) returned where a
-newsgroup name was expected -- breaking FidoNet -> NNTP newsgroup
-resolution and areafix listings for that area.
-Breaking change: the v1.5.17 global `AddSeenBy = ADDR` keyword is no
-longer recognised. Migration is mechanical - append `| ADDR` to each
-area line that previously inherited the global value, then delete the
-old `AddSeenBy = ADDR` line. An unmigrated `AddSeenBy = ADDR` line is
-silently parsed as a (nonsense) area mapping and has no effect, so
-verify your config after upgrading.
+src/hold_module.py:47 — arearemap_areas.pop('notify_sysop', None) added
+alongside the existing pop('hold', None). Closes a pre-existing latent
+bug where an area named notify_sysop would be erroneously held.
 
 
 ### Version 1.5.17 (June 16, 2026)
