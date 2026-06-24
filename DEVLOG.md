@@ -9,8 +9,44 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** June 16, 2026
+**Last Updated:** June 24, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.18 (June 24, 2026)
+
+#### [Arearemap] Per-Area AddSeenBy
+
+The v1.5.16 `AddSeenBy = ADDR` global keyword in `[Arearemap]` is
+replaced by a per-area inline syntax: append `| ADDR` (or
+`| ADDR1, ADDR2, ...`) to any area mapping line to add those FidoNet
+addresses to the SEEN-BY line of NNTP -> FidoNet gated messages for
+that area only.
+
+Syntax:
+
+```
+[Arearemap]
+MYSTIC    = alt.bbs.mystic | 2:250/1, 3:633/10
+RBERRYPI  = comp.sys.raspberry-pi | 1:135/250
+CBM       = comp.sys.cbm
+```
+
+Rules:
+
+- No `|` (or empty `|`) on an area line -> nothing added to SEEN-BY.
+- Multiple addresses are comma-separated; whitespace is tolerated.
+- Each address must be a valid 4D FidoNet address
+  (`zone:net/node[.point][@domain]`); invalid entries are dropped from
+  the list with a WARNING and the rest still apply.
+- Direction is NNTP -> FidoNet only (unchanged from v1.5.16).
+
+Breaking change: the v1.5.17 global `AddSeenBy = ADDR` keyword is no
+longer recognised. Migration is mechanical - append `| ADDR` to each
+area line that previously inherited the global value, then delete the
+old `AddSeenBy = ADDR` line. An unmigrated `AddSeenBy = ADDR` line is
+silently parsed as a (nonsense) area mapping and has no effect, so
+verify your config after upgrading.
 
 
 ### Version 1.5.17 (June 16, 2026)
