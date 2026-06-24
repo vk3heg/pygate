@@ -600,53 +600,57 @@ class Gateway:
     _ADDSEENBY_RE = re.compile(r'^\d+:\d+/\d+(\.\d+)?(@\S+)?$')
 
     def _build_arearemap_seenby_cache(self):
-        """Resolve [Arearemap] AddSeenBy once.
+        """Resolve [Arearemap] SEEN-BY addresses once.
 
-        Returns (formatted_address_or_None, set_of_area_keys_lowercase).
-        Logs a warning once if AddSeenBy is set but malformed.
+        Returns a dict {lowercased_area_tag: [formatted_addr, ...]}. Areas
+        listed in [Arearemap] with no '| ...' clause map to an empty list.
         """
+        cache = {}
         if not self.config.has_section('Arearemap'):
-            return None, set()
+            return cache
 
-        addr_raw = ''
-        area_keys = set()
         try:
-            for key, value in self.config.items('Arearemap'):
-                if key.lower() == 'addseenby':
-                    addr_raw = (value or '').strip()
-                else:
-                    area_keys.add(key.lower())
+            items = list(self.config.items('Arearemap'))
         except Exception as e:
             self.logger.error(f"Error reading Arearemap section: {e}")
-            return None, set()
+            return cache
 
-        if not addr_raw:
-            return None, area_keys
+        for key, value in items:
+            area_key = key.lower()
+            # Split on the first '|'; left side is the newsgroup, right
+            # side (if any) is the comma-list of SEEN-BY addresses.
+            if '|' in (value or ''):
+                _, addr_part = value.split('|', 1)
+            else:
+                addr_part = ''
 
-        if not self._ADDSEENBY_RE.match(addr_raw):
-            self.logger.warning(
-                f"[Arearemap] AddSeenBy value '{addr_raw}' is not a valid "
-                f"FidoNet address (expected zone:net/node[.point]); "
-                f"SEEN-BY will not be modified"
-            )
-            return None, area_keys
+            addrs = []
+            for raw in addr_part.split(','):
+                addr = raw.strip()
+                if not addr:
+                    continue
+                if not self._ADDSEENBY_RE.match(addr):
+                    self.logger.warning(
+                        f"[Arearemap] {key}: address '{addr}' is not a "
+                        f"valid FidoNet address (zone:net/node[.point]); "
+                        f"skipping this one entry"
+                    )
+                    continue
+                addrs.append(self.fidonet.format_address_for_seenby(addr))
 
-        formatted = self.fidonet.format_address_for_seenby(addr_raw)
-        return formatted, area_keys
+            cache[area_key] = addrs
+
+        return cache
 
     def get_arearemap_seenby(self, area_tag: str):
-        """Return formatted SEEN-BY address to append for ``area_tag``, or None.
+        """Return the list of formatted SEEN-BY addresses for ``area_tag``.
 
-        Honors the optional ``AddSeenBy`` keyword in ``[Arearemap]``.
-        Returns None if AddSeenBy is unset/invalid, or if ``area_tag`` is
-        not listed as an area in ``[Arearemap]``.
+        Empty list means nothing to append (area not in [Arearemap], or
+        listed but with no '| ...' clause).
         """
         if not hasattr(self, '_arearemap_seenby_cache'):
             self._arearemap_seenby_cache = self._build_arearemap_seenby_cache()
-        formatted, area_keys = self._arearemap_seenby_cache
-        if formatted and area_tag.lower() in area_keys:
-            return formatted
-        return None
+        return list(self._arearemap_seenby_cache.get(area_tag.lower(), []))
 
     def get_area_name_for_newsgroup(self, newsgroup: str) -> str:
         """Get FidoNet area name for newsgroup, checking [Arearemap] section first"""
@@ -851,9 +855,8 @@ class Gateway:
             'path': [self.fidonet.format_address_for_seenby(gateway_address)]
         }
 
-        extra_seenby = self.get_arearemap_seenby(area_tag)
-        if extra_seenby:
-            fido_message['seen_by'].append(extra_seenby)
+        for addr in self.get_arearemap_seenby(area_tag):
+            fido_message['seen_by'].append(addr)
 
         return fido_message
 
