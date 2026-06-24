@@ -433,9 +433,10 @@ class NNTPModule:
         # Check for explicit mapping in [Arearemap] section
         if self.config.has_section('Arearemap'):
             try:
-                for fido_area, newsgroup in self.config.items('Arearemap'):
+                for fido_area, mapped_value in self.config.items('Arearemap'):
                     if fido_area.upper() == area.upper():
-                        return newsgroup
+                        # Strip optional '| addr1, addr2, ...' suffix introduced in v1.5.18.
+                        return mapped_value.split('|', 1)[0].strip()
             except Exception as e:
                 self.logger.error(f"Error reading Arearemap section: {e}")
 

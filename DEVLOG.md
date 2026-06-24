@@ -41,6 +41,13 @@ Rules:
   the list with a WARNING and the rest still apply.
 - Direction is NNTP -> FidoNet only (unchanged from v1.5.16).
 
+Cross-module update: `src/nntp_module.py:get_newsgroup_for_area` and
+`src/areafix_module.py:{get_available_newsgroups, newsgroup_to_area_name}`
+were also updated to strip the optional `| ADDR` suffix when reading
+`[Arearemap]`. Without this, an area whose line uses the new syntax
+would have its raw value (including the address list) returned where a
+newsgroup name was expected -- breaking FidoNet -> NNTP newsgroup
+resolution and areafix listings for that area.
 Breaking change: the v1.5.17 global `AddSeenBy = ADDR` keyword is no
 longer recognised. Migration is mechanical - append `| ADDR` to each
 area line that previously inherited the global value, then delete the

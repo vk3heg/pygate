@@ -463,10 +463,12 @@ class AreafixModule:
         area_mappings = {}
         if self.config.has_section('Arearemap'):
             try:
-                for fidonet_area, newsgroup in self.config.items('Arearemap'):
+                for fidonet_area, mapped_value in self.config.items('Arearemap'):
                     # Skip special configuration flags (boolean settings, not newsgroup mappings)
                     if fidonet_area.lower() in ['hold', 'notify_sysop']:
                         continue
+                    # Strip optional '| addr1, addr2, ...' suffix introduced in v1.5.18.
+                    newsgroup = mapped_value.split('|', 1)[0].strip()
                     area_mappings[fidonet_area] = newsgroup
                     self.logger.debug(f"Area mapping: {fidonet_area} -> {newsgroup}")
             except Exception as e:
@@ -530,7 +532,9 @@ class AreafixModule:
         """Convert newsgroup name back to area name using [Arearemap] section"""
         if self.config.has_section('Arearemap'):
             try:
-                for fidonet_area, mapped_newsgroup in self.config.items('Arearemap'):
+                for fidonet_area, mapped_value in self.config.items('Arearemap'):
+                    # Strip optional '| addr1, addr2, ...' suffix introduced in v1.5.18.
+                    mapped_newsgroup = mapped_value.split('|', 1)[0].strip()
                     if mapped_newsgroup == newsgroup:
                         return fidonet_area
             except Exception as e:
