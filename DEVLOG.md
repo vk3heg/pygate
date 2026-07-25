@@ -26,7 +26,7 @@ Rationale: v1.5.15 introduced X-Comment-To round-trip on the
 FidoNet->NNTP direction only. NNTP->FidoNet was left addressing every
 gated article to the area's `default_to` (typically "All"), which lost
 the reply-target information that Fidonet-aware newsreaders supply via
-X-Comment-To. Tommi Koivula (2:221/1) reported this in his netmail
+X-Comment-To. Tommi Koivula (2:221/1) reported this in his echomail
 about v1.5.18. The "or default_to" fallback means articles without an
 X-Comment-To header keep addressing to "All" rather than the earlier
 "Unknown" placeholder that motivated the original revert.
