@@ -1,7 +1,7 @@
 # PyGate
 
 Python FidoNet-NNTP gateway. Bridges FidoNet echomail and NNTP newsgroups bidirectionally.
-Based on SoupGate by Tom Torfs. Currently v1.5.18.
+Based on SoupGate by Tom Torfs. Currently v1.5.19.
 
 ## Project Structure
 
@@ -74,6 +74,7 @@ See `pygate-sample.cfg` for all options with comments.
 
 ## Notable Fixes (Recent)
 
+- v1.5.19: NNTP->FidoNet X-Comment-To honoured when present - to_name prefers the article's X-Comment-To header, falling back to area default_to (or "All") when the header is missing/empty. Completes the round-trip that v1.5.15 only did one way.
 - v1.5.18: [Arearemap] AddSeenBy is now per-area - append `| ADDR[, ...]` to each area mapping line. Removes the v1.5.17 global `AddSeenBy = ADDR` keyword (breaking config change; migrate by appending `| ADDR` to each affected area line).
 - v1.5.17: INTL kludge for netmail hold notifications - write_message() now treats area='NETMAIL' as netmail (skips AREA: body line, emits INTL/FMPT/TOPT kludges per FTS-0001)
 - v1.5.15: TK-contributed merge - X-Comment-To header round-trip (FidoNet->NNTP only; NNTP->FidoNet still addresses to area default_to "All"), NOTE/NEWSREADER kludges from User-Agent/X-Newsreader, X-Organization, Content-Transfer-Encoding: 8bit; tear line keeps PyGate identifier with version sourced from pygate.__version__

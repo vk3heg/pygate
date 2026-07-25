@@ -9,8 +9,29 @@ PyGate is a Python-based gateway system that bridges FidoNet echomail and NNTP n
 seamless message exchange between the two networks. PyGate is designed to run on the NNTP news server,
 but can be run on a different computer as a client only.
 
-**Last Updated:** June 24, 2026
+**Last Updated:** July 24, 2026
 **Language:** Python 3.7+
+
+
+### Version 1.5.19 (July 24, 2026)
+
+#### NNTP->FidoNet honours X-Comment-To
+
+src/gateway.py:806-825 - `convert_nntp_to_fido()` now reads the
+`X-Comment-To` header from the NNTP article and uses it as the FidoNet
+`to_name` when non-empty; when missing or blank it falls back to the
+prior behaviour of `area_config.get('default_to', 'All')`.
+
+Rationale: v1.5.15 introduced X-Comment-To round-trip on the
+FidoNet->NNTP direction only. NNTP->FidoNet was left addressing every
+gated article to the area's `default_to` (typically "All"), which lost
+the reply-target information that Fidonet-aware newsreaders supply via
+X-Comment-To. Tommi Koivula (2:221/1) reported this in his netmail
+about v1.5.18. The "or default_to" fallback means articles without an
+X-Comment-To header keep addressing to "All" rather than the earlier
+"Unknown" placeholder that motivated the original revert.
+
+No config change required.
 
 
 ### Version 1.5.18 (June 24, 2026)
